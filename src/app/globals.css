@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --pink: #ed3b86;
+  --cloud: #f0edea;
+  --charcoal: #454041;
+  --vanta: #1a1a1a;
+  --line: #dfd9d4;
+}
+
+html, body { background: var(--cloud); color: var(--charcoal); }
+
+body {
+  font-family: "Review", Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .eyebrow {
+    @apply text-[11px] font-bold uppercase tracking-[0.18em] text-pink;
+  }
+  .panel {
+    @apply border border-line bg-white;
+  }
+  .field-label {
+    @apply mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-charcoal/70;
+  }
+  .input {
+    @apply w-full border border-line bg-white px-3 py-2 text-sm text-charcoal
+           outline-none transition focus:border-pink focus:ring-1 focus:ring-pink/30;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 border px-4 py-2 text-[11px]
+           font-bold uppercase tracking-[0.14em] transition disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn border-pink bg-pink text-white hover:bg-pink-600 hover:border-pink-600;
+  }
+  .btn-ghost {
+    @apply btn border-line bg-white text-charcoal hover:border-charcoal;
+  }
+  .btn-dark {
+    @apply btn border-vanta bg-vanta text-white hover:opacity-90;
+  }
+  .badge {
+    @apply inline-flex items-center rounded-pill border px-2.5 py-0.5 text-[10px]
+           font-bold uppercase tracking-[0.12em];
+  }
+  .th {
+    @apply px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-charcoal/60;
+  }
+  .td {
+    @apply px-4 py-3 text-sm align-top;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

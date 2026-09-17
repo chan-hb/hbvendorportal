@@ -1,0 +1,72 @@
+name: Deploy to Azure App Service
+
+# Builds on GitHub, deploys to App Service. Building here rather than on the
+# server keeps the deployment predictable and means a broken build never
+# reaches production.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "20.x"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        # No DATABASE_URL here on purpose. The schema is applied at startup by
+        # scripts/start.mjs, so the build never touches the database.
+        run: npm run build
+
+      - name: Prune development dependencies
+        run: npm prune --omit=dev
+
+      - name: Package
+        run: |
+          zip -qr release.zip . \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x "*.md"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app
+          path: release.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.webapp-url }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: app
+
+      - name: Unzip
+        run: unzip -q release.zip -d release
+
+      - name: Deploy
+        id: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: release

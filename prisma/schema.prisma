@@ -1,0 +1,718 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------- identity
+
+enum Role {
+  VENDOR
+  HB_USER
+  HB_APPROVER
+  HB_ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(VENDOR)
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  // Password authentication. Null until the account has been set up, which is
+  // what distinguishes an invited user from one who can actually sign in.
+  passwordHash      String?
+  mustChangePassword Boolean   @default(true)
+  passwordUpdatedAt  DateTime?
+
+  // Throttling. Counted per account rather than per address, since a supplier
+  // signing in from a shared office would otherwise lock out their colleagues.
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+
+  vendorId String?
+  vendor   Vendor? @relation(fields: [vendorId], references: [id])
+
+  accounts        Account[]
+  sessions        Session[]
+  createdAgs      Agreement[]        @relation("AgreementCreatedBy")
+  historyEntries  AgreementHistory[]
+  passwordTokens  PasswordResetToken[]
+  localItems      LocalItem[]        @relation("LocalItemCreatedBy")
+  rfqsCreated     Rfq[]              @relation("RfqCreatedBy")
+  bidsSubmitted   Bid[]              @relation("BidSubmittedBy")
+  rfqWatching     RfqWatcher[]
+
+  @@index([vendorId])
+  @@index([role])
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum PasswordTokenPurpose {
+  SET_INITIAL
+  RESET
+}
+
+/// Single use token for setting or resetting a password.
+/// Only the hash is stored, so a database leak does not hand over live tokens.
+model PasswordResetToken {
+  id        String               @id @default(cuid())
+  userId    String
+  user      User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String               @unique
+  purpose   PasswordTokenPurpose @default(RESET)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime             @default(now())
+  createdBy String?
+
+  @@index([userId, createdAt])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ---------------------------------------------------------------- tenancy
+
+// Vendor master. Code, name and blocked status are owned by D365 and
+// overwritten on every sync. Domains and allow-listed emails are portal
+// concepts and are never touched by the sync.
+model Vendor {
+  id        String   @id @default(cuid())
+  code      String   @unique // D365 vendor account, e.g. V-000123
+  name      String
+  domains   String[] @default([]) // e.g. ["acme-cosmetics.com"] - any email on these domains maps here
+  isActive  Boolean  @default(true) // portal access switch, controlled by an administrator
+  createdAt DateTime @default(now())
+
+  // A vendor added by hand so they can be invited to quote before they exist
+  // in D365. Everything else about them behaves normally, which is what lets
+  // them sign in and be scoped like any other supplier.
+  isProvisional Boolean @default(false)
+  contactName   String?
+
+  // Mirrored from D365
+  isBlocked     Boolean   @default(false) // blocked for purchase in the ERP
+  vendorGroupId String?
+  currency      String?
+  source        String    @default("D365") // D365 | MANUAL
+  lastSyncedAt  DateTime?
+
+  legalEntities VendorLegalEntity[]
+  allowedEmails AllowedEmail[]
+  users         User[]
+  agreements      Agreement[]
+  items           Item[]
+  tradeAgreements TradeAgreement[]
+  invitations     RfqInvitation[]
+  bids            Bid[]
+
+  @@index([isActive])
+}
+
+model LegalEntity {
+  id       String  @id @default(cuid())
+  code     String  @unique // dataAreaId, e.g. "hb01"
+  name     String
+  currency String? // default trading currency
+  isActive Boolean @default(true)
+
+  vendors    VendorLegalEntity[]
+  items      Item[]
+  agreements Agreement[]
+}
+
+model VendorLegalEntity {
+  vendorId      String
+  legalEntityId String
+  vendor        Vendor      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  legalEntity   LegalEntity @relation(fields: [legalEntityId], references: [id], onDelete: Cascade)
+
+  @@id([vendorId, legalEntityId])
+}
+
+// An explicit allow-list entry. Used when a vendor contact sits on a shared
+// mail domain (gmail etc.) that cannot be domain-matched.
+model AllowedEmail {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  vendorId  String
+  vendor    Vendor   @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------- D365 master data
+
+model Item {
+  id            String   @id @default(cuid())
+  dataAreaId    String
+  itemNumber    String
+  productName   String?
+  searchName    String?
+  unit          String?
+  itemGroupId   String?
+  isActive      Boolean  @default(true)
+  lastSyncedAt  DateTime @default(now())
+
+  // The default vendor column from the item master. An item is actively
+  // supplied by exactly one vendor, and this is the field that says which.
+  primaryVendorCode String?
+  primaryVendorId   String?
+  primaryVendor     Vendor? @relation(fields: [primaryVendorId], references: [id])
+
+  legalEntityId String?
+  legalEntity   LegalEntity? @relation(fields: [legalEntityId], references: [id])
+
+  tradeAgreements TradeAgreement[]
+
+  @@unique([dataAreaId, itemNumber])
+  @@index([itemNumber])
+  @@index([primaryVendorCode])
+  @@index([primaryVendorId])
+}
+
+// Current trade agreements pulled from D365 (read only mirror)
+model TradeAgreement {
+  id              String    @id @default(cuid())
+  dataAreaId      String
+  itemNumber      String
+  vendorCode      String?
+  accountRelation String?
+  currency        String
+  amount          Decimal   @db.Decimal(18, 6)
+  unit            String?
+  quantityFrom    Decimal?  @db.Decimal(18, 6)
+  fromDate        DateTime?
+  toDate          DateTime?
+  externalKey     String    @unique // stable key from D365 for upsert
+  lastSyncedAt    DateTime  @default(now())
+
+  itemId String?
+  item   Item?   @relation(fields: [itemId], references: [id])
+
+  // Resolved during sync. Falls back to the item's default vendor when the
+  // agreement is recorded against a group rather than a specific account.
+  vendorId String?
+  vendor   Vendor? @relation(fields: [vendorId], references: [id])
+
+  @@index([dataAreaId, itemNumber])
+  @@index([vendorCode])
+  @@index([vendorId])
+  @@index([fromDate])
+}
+
+// ---------------------------------------------------------------- workflow
+
+enum AgreementStatus {
+  DRAFT
+  SUBMITTED
+  CHANGE_REQUESTED
+  APPROVED
+  REJECTED
+}
+
+enum HistoryAction {
+  CREATED
+  SUBMITTED
+  RESUBMITTED
+  APPROVED
+  REJECTED
+  CHANGE_REQUESTED
+  WITHDRAWN
+  ERP_SYNC_SUCCEEDED
+  ERP_SYNC_FAILED
+}
+
+model Agreement {
+  id         String          @id @default(cuid())
+  reference  String          @unique // human readable, e.g. TA-2026-000042
+  status     AgreementStatus @default(DRAFT)
+
+  vendorId   String
+  vendor     Vendor @relation(fields: [vendorId], references: [id])
+
+  dataAreaId    String
+  legalEntityId String?
+  legalEntity   LegalEntity? @relation(fields: [legalEntityId], references: [id])
+
+  itemNumber String
+  itemName   String?
+  currency   String
+  amount     Decimal   @db.Decimal(18, 6)
+  unit       String?
+  fromDate   DateTime
+  toDate     DateTime?
+  notes      String?
+
+  // snapshot of the live D365 price at submission time, for approver context
+  previousAmount   Decimal? @db.Decimal(18, 6)
+  previousCurrency String?
+
+  createdById String
+  createdBy   User   @relation("AgreementCreatedBy", fields: [createdById], references: [id])
+
+  submittedAt DateTime?
+  decidedAt   DateTime?
+  decidedBy   String?
+
+  // ERP sync state
+  erpCreated  Boolean   @default(false)
+  erpRecordId String?
+  erpSyncedAt DateTime?
+  erpError    String?
+  erpAttempts Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  history AgreementHistory[]
+
+  @@index([vendorId, status])
+  @@index([status, createdAt])
+  @@index([erpCreated])
+  @@index([dataAreaId, itemNumber])
+}
+
+model AgreementHistory {
+  id          String        @id @default(cuid())
+  agreementId String
+  agreement   Agreement     @relation(fields: [agreementId], references: [id], onDelete: Cascade)
+  action      HistoryAction
+  comment     String?
+  fromStatus  AgreementStatus?
+  toStatus    AgreementStatus?
+  snapshot    Json? // full record state at the time of the action
+  actorId     String?
+  actor       User?  @relation(fields: [actorId], references: [id])
+  actorEmail  String
+  actorRole   Role
+  createdAt   DateTime @default(now())
+
+  @@index([agreementId, createdAt])
+}
+
+// ---------------------------------------------------------------- integration
+
+model IntegrationSetting {
+  id        String @id @default("default")
+
+  tenantId        String?
+  clientId        String?
+  clientSecretEnc String? // AES-256-GCM, never returned to the browser
+  resourceUrl     String? // https://<env>.operations.dynamics.com
+  scopeOverride   String?
+
+  // Entity names are environment specific, so they are configurable.
+  vendorEntity         String  @default("VendorsV2")
+  itemEntity           String  @default("ReleasedProductsV2")
+  tradeAgreementEntity String  @default("PriceDiscountJournalLines")
+  pushEntity           String  @default("HBVendorTradeAgreementRequests")
+
+  legalEntities String[] @default([]) // dataAreaIds included in the sync
+
+  // Rows requested per HTTP page. D365 caps this server side, so raising it
+  // beyond the cap has no effect. It is not a limit on the total pulled.
+  pageSize Int @default(1000)
+
+  // Incremental pulls use ModifiedDateTime against the last successful run.
+  // A full pull is still available from the admin page on demand.
+  incrementalEnabled Boolean @default(true)
+  modifiedDateField  String  @default("ModifiedDateTime")
+
+  // Extra OData filter appended to each pull. The usual reason is to skip
+  // items that no supplier will ever price, e.g. those with no default vendor.
+  itemFilter           String?
+  tradeAgreementFilter String?
+
+  // Seconds a single sync invocation may run before it checkpoints and stops.
+  // MUST be below the platform function timeout, with room to spare for the
+  // final page to finish writing. A budget larger than the platform limit is
+  // worse than useless: the function is killed before the budget is reached,
+  // so the run never checkpoints and never completes.
+  timeBudgetSeconds Int @default(180)
+
+  cronEnabled Boolean @default(true)
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+}
+
+/// Settings Purchasing controls, separate from the D365 integration because
+/// they are a commercial concern rather than a technical one.
+model RfqSetting {
+  id String @id @default("default")
+
+  // The address RFQ email is sent from. Must be on a domain verified with the
+  // mail provider, or sending will be rejected.
+  fromName  String  @default("Huda Beauty Sourcing")
+  fromEmail String?
+  replyTo   String?
+  ccEmails  String[] @default([])
+
+  // Mail goes out under a named Huda Beauty person rather than a no-reply
+  // address, so a supplier replying reaches someone. The address still has to
+  // be on a domain verified with the mail provider.
+  senderUserId String?
+  /// Use the individual buyer who raised the RFQ, falling back to the sender
+  /// above when they are not a Huda Beauty user.
+  useRfqOwnerAsSender Boolean @default(true)
+
+  // Offered as tick boxes when raising an RFQ.
+  standardTiers Decimal[] @db.Decimal(18, 4)
+
+  defaultPaymentTerms String?
+  defaultIncoterm     String?
+
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
+enum SyncType {
+  VENDORS
+  ITEMS
+  TRADE_AGREEMENTS
+  PUSH_APPROVED
+  CONNECTION_TEST
+}
+
+enum SyncStatus {
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+/// Resume point for a long running pull. One row per entity and legal entity.
+model SyncCheckpoint {
+  id         String   @id @default(cuid())
+  entity     String // ITEMS | TRADE_AGREEMENTS | VENDORS
+  dataAreaId String
+
+  // OData nextLink to carry on from after a timeout. Null means start fresh.
+  nextLink String?
+
+  // High water mark for incremental pulls.
+  watermark      DateTime?
+  lastCompleted  DateTime?
+  rowsLastRun    Int       @default(0)
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([entity, dataAreaId])
+}
+
+model SyncRun {
+  id           String     @id @default(cuid())
+  type         SyncType
+  status       SyncStatus @default(RUNNING)
+  trigger      String     @default("manual") // manual | cron
+  dataAreaId   String?
+  processed    Int        @default(0)
+  failed       Int        @default(0)
+  message      String?
+  resumed      Boolean    @default(false)
+  incomplete   Boolean    @default(false) // ran out of time budget, will resume
+  startedAt    DateTime   @default(now())
+  // Touched after every page. A RUNNING row with a stale heartbeat means the
+  // function was killed rather than that work is still happening.
+  heartbeatAt  DateTime?
+  finishedAt   DateTime?
+  triggeredBy  String?
+
+  @@index([type, startedAt])
+}
+
+// ============================================================================
+// RFQ / sourcing
+// ============================================================================
+
+/// Items Huda Beauty wants to source before they exist in D365.
+/// The local code is the identifier used everywhere until the ERP number
+/// arrives, at which point erpItemNumber is filled in and the two coexist.
+model LocalItem {
+  id        String @id @default(cuid())
+  localCode String @unique // LOC-2026-000001
+
+  name        String
+  description String?
+  category    String?
+  unit        String?
+  targetPrice Decimal? @db.Decimal(18, 6)
+  currency    String?
+
+  // Populated when the item is eventually created in the ERP. Deliberately not
+  // a relation to Item: the number can be recorded before the next master data
+  // sync brings the row across.
+  erpItemNumber String?
+  erpLinkedAt   DateTime?
+  erpLinkedBy   String?
+
+  isActive    Boolean  @default(true)
+  createdById String
+  createdBy   User     @relation("LocalItemCreatedBy", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  rfqs Rfq[]
+
+  @@index([erpItemNumber])
+  @@index([isActive])
+}
+
+enum RfqStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  AWARDED
+  CANCELLED
+}
+
+enum RfqItemSource {
+  ERP
+  LOCAL
+}
+
+model Rfq {
+  id        String    @id @default(cuid())
+  reference String    @unique // RFQ-2026-000001
+  title     String
+  status    RfqStatus @default(DRAFT)
+
+  dataAreaId String
+  currency   String
+
+  // The subject of the RFQ is either a synced ERP item or a local one.
+  itemSource  RfqItemSource
+  itemNumber  String? // set when itemSource is ERP
+  localItemId String?
+  localItem   LocalItem? @relation(fields: [localItemId], references: [id])
+
+  targetQuantity Decimal   @db.Decimal(18, 4)
+  unit           String?
+
+  // Tiers the buyer wants priced, e.g. [5000, 10000, 25000]. Suppliers return
+  // a price against each, which is how volume pricing is actually negotiated.
+  quantityTiers Decimal[] @db.Decimal(18, 4)
+
+  // Optional target for when the goods are needed. Kept for context only:
+  // timing is now assessed from lead time and capacity, not delivery dates.
+  requiredByDate DateTime?
+  closesAt       DateTime
+  notes          String?
+
+  // Terms the buyer is asking for. A supplier can counter in their quotation.
+  requestedPaymentTerms String?
+  requestedIncoterm     String?
+
+  // Scoring weights, per RFQ so a buyer can favour speed over price when it
+  // matters. Stored as basis points of 1.0 to avoid float drift.
+  weightPrice       Int @default(45)
+  weightLeadTime    Int @default(25)
+  weightCapacity    Int @default(20)
+  weightReliability Int @default(10)
+
+  createdById String
+  createdBy   User   @relation("RfqCreatedBy", fields: [createdById], references: [id])
+
+  awardedBidId String?  @unique
+  awardedAt    DateTime?
+  awardedBy    String?
+  awardReason  String?
+
+  allBidsInAlertSentAt DateTime?
+  closedAt             DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invitations RfqInvitation[]
+  bids        Bid[]
+  watchers    RfqWatcher[]
+  events      RfqEvent[]
+  attachments RfqAttachment[]
+
+  @@index([status, closesAt])
+  @@index([itemNumber])
+}
+
+/// Brief documents, specifications and artwork attached to an RFQ.
+/// Stored in the database rather than object storage to keep deployment to one
+/// service. Fine at this size; see the notes if briefs get large.
+model RfqAttachment {
+  id       String @id @default(cuid())
+  rfqId    String
+  rfq      Rfq    @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+
+  filename    String
+  contentType String
+  sizeBytes   Int
+  data        Bytes
+
+  uploadedBy String
+  createdAt  DateTime @default(now())
+
+  @@index([rfqId])
+}
+
+enum InvitationStatus {
+  INVITED
+  VIEWED
+  SUBMITTED
+  DECLINED
+}
+
+model RfqInvitation {
+  id       String           @id @default(cuid())
+  rfqId    String
+  rfq      Rfq              @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  vendorId String
+  vendor   Vendor           @relation(fields: [vendorId], references: [id])
+  status   InvitationStatus @default(INVITED)
+
+  invitedAt   DateTime  @default(now())
+  invitedBy   String?
+  emailSentAt DateTime?
+  emailTo     String[]  @default([])
+  viewedAt    DateTime?
+  respondedAt DateTime?
+  declineNote String?
+
+  @@unique([rfqId, vendorId])
+  @@index([vendorId, status])
+}
+
+/// Huda Beauty users who should hear when an RFQ finishes collecting bids.
+/// The creator is always notified; this is for everyone else.
+model RfqWatcher {
+  rfqId  String
+  userId String
+  rfq    Rfq    @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([rfqId, userId])
+}
+
+enum BidStatus {
+  DRAFT
+  SUBMITTED
+  WITHDRAWN
+}
+
+model Bid {
+  id       String    @id @default(cuid())
+  rfqId    String
+  rfq      Rfq       @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  vendorId String
+  vendor   Vendor    @relation(fields: [vendorId], references: [id])
+  status   BidStatus @default(DRAFT)
+
+  currency String
+  notes    String?
+
+  // The date the supplier is quoting as of, and how long the price holds.
+  quotationDate DateTime?
+  validUntil    DateTime?
+
+  // Commercial and capacity terms the supplier is offering.
+  leadTimeDays   Int?
+  weeklyCapacity Decimal? @db.Decimal(18, 4)
+  moq            Decimal? @db.Decimal(18, 4)
+  paymentTerms   String?
+  incoterm       String?
+
+  submittedById String?
+  submittedBy   User?     @relation("BidSubmittedBy", fields: [submittedById], references: [id])
+  submittedAt   DateTime?
+
+  // Denormalised roll-ups of the tranche lines, maintained on save so that
+  // comparison and scoring do not have to aggregate on every read.
+  totalQuantity    Decimal? @db.Decimal(18, 4)
+  weightedAvgPrice Decimal? @db.Decimal(18, 6)
+  // Price at the RFQ's target quantity, or the nearest tier below it. This is
+  // the number a buyer compares on.
+  referencePrice   Decimal? @db.Decimal(18, 6)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lines BidLine[]
+
+  @@unique([rfqId, vendorId])
+  @@index([rfqId, status])
+}
+
+/// One price break: at this quantity, this unit price.
+model BidLine {
+  id     String @id @default(cuid())
+  bidId  String
+  bid    Bid    @relation(fields: [bidId], references: [id], onDelete: Cascade)
+  lineNo Int
+
+  quantity  Decimal @db.Decimal(18, 4)
+  unitPrice Decimal @db.Decimal(18, 6)
+  notes     String?
+
+  @@unique([bidId, lineNo])
+}
+
+enum RfqEventType {
+  CREATED
+  OPENED
+  VENDOR_INVITED
+  INVITE_EMAIL_SENT
+  BID_SUBMITTED
+  BID_WITHDRAWN
+  VENDOR_DECLINED
+  ALL_BIDS_IN
+  CLOSED
+  AWARDED
+  CANCELLED
+  NOTIFICATION_FAILED
+}
+
+model RfqEvent {
+  id      String       @id @default(cuid())
+  rfqId   String
+  rfq     Rfq          @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+  type    RfqEventType
+  detail  String?
+  actorEmail String?
+  createdAt DateTime   @default(now())
+
+  @@index([rfqId, createdAt])
+}
