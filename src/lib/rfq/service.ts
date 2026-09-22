@@ -418,10 +418,18 @@ export async function getRfq(actor: Actor, id: string) {
       invitations: { include: { vendor: { select: { id: true, name: true, code: true } } } },
       watchers: { include: { user: { select: { email: true } } } },
       events: { orderBy: { createdAt: "desc" }, take: 50 },
+      // The brief is shown to both sides, so it is loaded here rather than
+      // fetched separately by the page.
+      attachments: {
+        select: { id: true, filename: true, sizeBytes: true, uploadedBy: true, createdAt: true },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
   return rfq;
 }
+
+
 
 // ---------------------------------------------------------------- provisional vendors
 
