@@ -1,72 +1,55 @@
-name: Deploy to Azure App Service
+name: Build and deploy to Azure Container Apps
 
-# Builds on GitHub, deploys to App Service. Building here rather than on the
-# server keeps the deployment predictable and means a broken build never
-# reaches production.
+# Uses the secrets the Azure portal's continuous deployment wizard created
+# (HBVENDPORTAL_*), plus three added by hand for the registry and app names.
+#
+# Images are tagged with the commit SHA rather than "latest", so rolling back is
+# a matter of redeploying an older tag.
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-env:
-  NODE_VERSION: "22.x"
-
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Sign in to the container registry
+        uses: docker/login-action@v3
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.HBVENDPORTAL_REGISTRY_USERNAME }}
+          password: ${{ secrets.HBVENDPORTAL_REGISTRY_PASSWORD }}
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        # No DATABASE_URL here on purpose. The schema is applied at startup by
-        # scripts/start.mjs, so the build never touches the database.
-        run: npm run build
-
-      - name: Prune development dependencies
-        run: npm prune --omit=dev
-
-      - name: Package
+      - name: Build and push
         run: |
-          zip -qr release.zip . \
-            -x ".git/*" \
-            -x ".github/*" \
-            -x "*.md"
+          IMAGE="${{ secrets.ACR_LOGIN_SERVER }}/vendor-portal:${GITHUB_SHA::7}"
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
 
-      - uses: actions/upload-artifact@v4
+      - name: Sign in to Azure
+        uses: azure/login@v2
         with:
-          name: app
-          path: release.zip
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: production
-      url: ${{ steps.deploy.outputs.webapp-url }}
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: app
-
-      - name: Unzip
-        run: unzip -q release.zip -d release
+          creds: ${{ secrets.HBVENDPORTAL_AZURE_CREDENTIALS }}
 
       - name: Deploy
-        id: deploy
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: release
+        run: |
+          az containerapp update \
+            --name ${{ secrets.CONTAINER_APP_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --image "$IMAGE"
+
+      - name: Report the deployed revision
+        run: |
+          az containerapp revision list \
+            --name ${{ secrets.CONTAINER_APP_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query "[?properties.active].{revision:name, created:properties.createdTime}" \
+            --output table
