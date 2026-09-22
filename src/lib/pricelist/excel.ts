@@ -196,8 +196,35 @@ export async function importPriceList(actor: Actor, rows: ImportRow[]) {
 
   for (const row of rows) {
     try {
-      const item = await prisma.item.findUnique({ where: { itemNumber: row.itemNumber } });
-      if (!item) throw new Error("Not in the item master");
+      // Items are held per legal entity, so the number alone is not a unique
+      // key. The spreadsheet carries the entity, but a supplier may have
+      // cleared or mistyped that column, so fall back to matching on the
+      // number and report the ambiguity rather than guessing.
+      const candidates = await prisma.item.findMany({
+        where: {
+          itemNumber: row.itemNumber,
+          ...(row.dataAreaId ? { dataAreaId: row.dataAreaId } : {}),
+        },
+        take: 5,
+      });
+
+      if (candidates.length === 0) {
+        const elsewhere = row.dataAreaId
+          ? await prisma.item.findFirst({ where: { itemNumber: row.itemNumber } })
+          : null;
+        throw new Error(
+          elsewhere
+            ? `Not in the item master for ${row.dataAreaId.toUpperCase()}. It exists in ${elsewhere.dataAreaId.toUpperCase()}, so check the legal entity column.`
+            : "Not in the item master",
+        );
+      }
+      if (candidates.length > 1) {
+        throw new Error(
+          `This item exists in ${candidates.map((c) => c.dataAreaId.toUpperCase()).join(", ")}. Set the legal entity column so we know which one to price.`,
+        );
+      }
+
+      const item = candidates[0];
       if (item.primaryVendorCode !== vendor.code) throw new Error("You are not the supplier for this item");
 
       const agreement = await createAgreement(
