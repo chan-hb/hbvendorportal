@@ -13,6 +13,8 @@ export default async function SetPasswordPage({
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-16">
       <div className="panel w-full max-w-md p-10">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/hb-logo.png" alt="Huda Beauty" width={2048} height={358} className="mb-8 w-36" />
         <p className="eyebrow">Password</p>
 
         {!check.valid ? (

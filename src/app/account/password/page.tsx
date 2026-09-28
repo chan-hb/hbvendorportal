@@ -18,6 +18,8 @@ export default async function ChangePasswordPage() {
   return (
     <main className="mx-auto max-w-lg space-y-6 px-6 py-16">
       <div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/hb-logo.png" alt="Huda Beauty" width={2048} height={358} className="mb-8 w-36" />
         <p className="eyebrow">Your account</p>
         <h1 className="mt-1 font-display text-3xl uppercase tracking-tight">
           {forced ? "Choose a new password" : "Change your password"}

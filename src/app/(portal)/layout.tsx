@@ -36,11 +36,15 @@ export default async function PortalLayout({
     <div className="min-h-screen">
       <header className="border-b border-line bg-white">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-8 gap-y-3 px-6 py-4">
-          <Link
-            href="/"
-            className="font-display text-2xl uppercase leading-none tracking-[0.14em] text-charcoal transition hover:text-pink sm:text-3xl"
-          >
-            Huda Beauty
+          <Link href="/" className="shrink-0 transition hover:opacity-70" aria-label="Huda Beauty, home">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/hb-logo.png"
+              alt="Huda Beauty"
+              width={160}
+              height={28}
+              className="h-5 w-auto sm:h-7"
+            />
           </Link>
 
           <nav className="order-last flex w-full gap-6 border-t border-line pt-3 lg:order-none lg:w-auto lg:border-0 lg:pt-0">

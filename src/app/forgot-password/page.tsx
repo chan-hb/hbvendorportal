@@ -5,6 +5,8 @@ export default function ForgotPasswordPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-16">
       <div className="panel w-full max-w-md p-10">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/hb-logo.png" alt="Huda Beauty" width={2048} height={358} className="mb-8 w-36" />
         <p className="eyebrow">Password</p>
         <h1 className="mt-2 font-display text-2xl uppercase tracking-tight">Forgotten your password?</h1>
         <p className="mt-3 text-sm text-charcoal/70">

@@ -11,17 +11,30 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <main className="grid min-h-screen lg:grid-cols-[7fr_5fr]">
       <section className="relative hidden flex-col justify-end bg-pink p-12 lg:flex">
         <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-white/70">Supplier portal</p>
-        <h1 className="mt-4 font-display text-[92px] leading-[0.82] tracking-[-0.03em] text-white">
-          HUDA
-          <br />
-          BEAUTY
-        </h1>
-        <p className="mt-8 max-w-sm text-sm leading-relaxed text-white/85">
+        {/* The artwork is black, so it is inverted to white for the pink panel. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hb-logo.png"
+          alt="Huda Beauty"
+          width={2048}
+          height={358}
+          className="mt-6 w-full max-w-md [filter:brightness(0)_invert(1)]"
+        />
+        <p className="mt-10 max-w-sm text-sm leading-relaxed text-white/85">
           Quotations, trade agreements and pricing, in one place.
         </p>
       </section>
 
       <section className="flex flex-col justify-center px-8 py-16 sm:px-16">
+        {/* Shown only when the pink panel is hidden, so the logo appears once. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hb-logo.png"
+          alt="Huda Beauty"
+          width={2048}
+          height={358}
+          className="mb-10 w-40 lg:hidden"
+        />
         <p className="eyebrow">Sign in</p>
         <h2 className="mt-2 font-display text-3xl uppercase tracking-tight text-charcoal">Welcome back</h2>
         <p className="mt-3 text-sm text-charcoal/70">
