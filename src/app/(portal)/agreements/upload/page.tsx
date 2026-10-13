@@ -14,7 +14,7 @@ export default async function PriceListPage() {
         <Link href="/agreements" className="text-[11px] font-bold uppercase tracking-[0.12em] text-charcoal/50 hover:text-pink">
           Back to agreements
         </Link>
-        <h1 className="mt-2 font-display text-3xl uppercase tracking-tight">Update prices in bulk</h1>
+        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">Update prices in bulk</h1>
         <p className="mt-2 text-sm text-charcoal/60">
           Download your price list, change what needs changing, and upload it back. Each changed row becomes a
           request for approval exactly as if you had entered it by hand.

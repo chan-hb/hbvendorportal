@@ -24,7 +24,7 @@ export default async function PriceHistoryPage({
     <div className="space-y-6">
       <div>
         <p className="eyebrow">Trade agreements</p>
-        <h1 className="mt-1 font-display text-3xl uppercase tracking-tight">Price history</h1>
+        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">Price history</h1>
         <p className="mt-1 text-sm text-charcoal/60">
           Every price on record, from Dynamics 365 and from decided portal requests, in one chronology. The change
           column compares each price with the one it replaced for that item, vendor and entity.

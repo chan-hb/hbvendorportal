@@ -26,7 +26,7 @@ export default async function NewAgreementPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <p className="eyebrow">{user.vendorName}</p>
-        <h1 className="mt-1 font-display text-3xl uppercase tracking-tight">New trade agreement</h1>
+        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">New trade agreement</h1>
         <p className="mt-2 text-sm text-charcoal/60">
           Pick the item, set the price and the date it takes effect. A Huda Beauty approver reviews it before
           anything reaches Dynamics 365.

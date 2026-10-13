@@ -34,41 +34,25 @@ export default async function PortalLayout({
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-8 gap-y-3 px-6 py-4">
+      <div className="promo-bar">Supplier portal</div>
+
+      <header className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-[1400px] items-center gap-6 px-6 py-4">
           <Link href="/" className="shrink-0 transition hover:opacity-70" aria-label="Huda Beauty, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/hb-logo.png"
-              alt="Huda Beauty"
-              width={160}
-              height={28}
-              className="h-5 w-auto sm:h-7"
-            />
+            <img src="/hb-logo.png" alt="Huda Beauty" width={160} height={28} className="h-5 w-auto sm:h-6" />
           </Link>
 
-          <nav className="order-last flex w-full gap-6 border-t border-line pt-3 lg:order-none lg:w-auto lg:border-0 lg:pt-0">
-            {nav.map((n) => (
-              <Link
-                key={n.href}
-                href={n.href}
-                className="text-[11px] font-bold uppercase tracking-[0.12em] text-charcoal/70 hover:text-pink"
-              >
-                {n.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ml-auto flex items-center gap-5">
             <Link
               href="/account/password"
-              className="text-[11px] font-bold uppercase tracking-[0.12em] text-charcoal/60 hover:text-pink"
+              className="hidden text-[10px] font-bold uppercase tracking-[0.16em] text-muted hover:text-pink sm:block"
             >
               Password
             </Link>
-            <div className="text-right leading-tight">
+            <div className="hidden text-right leading-tight sm:block">
               <p className="text-xs font-semibold text-charcoal">{user.email}</p>
-              <p className="text-[10px] uppercase tracking-[0.12em] text-charcoal/50">
+              <p className="text-[10px] uppercase tracking-[0.14em] text-muted">
                 {user.vendorName ?? roleLabel(user.role)}
                 {canApprove(user.role) ? " . Approver" : ""}
               </p>
@@ -79,15 +63,31 @@ export default async function PortalLayout({
                 await signOut({ redirectTo: "/login" });
               }}
             >
-              <button className="text-[11px] font-bold uppercase tracking-[0.12em] text-charcoal/60 hover:text-pink">
+              <button className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted hover:text-pink">
                 Sign out
               </button>
             </form>
           </div>
         </div>
+
+        {/* Navigation sits on its own line, centred, the way the storefront
+            separates the wordmark from the category row. */}
+        <nav className="border-t border-line">
+          <div className="mx-auto flex max-w-[1400px] gap-7 overflow-x-auto px-6 py-3">
+            {nav.map((n) => (
+              <Link
+                key={n.href}
+                href={n.href}
+                className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.16em] text-charcoal transition hover:text-pink"
+              >
+                {n.label}
+              </Link>
+            ))}
+          </div>
+        </nav>
       </header>
 
-      <main className="mx-auto max-w-[1400px] px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-[1400px] px-6 py-10">{children}</main>
     </div>
   );
 }

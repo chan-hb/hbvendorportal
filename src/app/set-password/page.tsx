@@ -19,7 +19,7 @@ export default async function SetPasswordPage({
 
         {!check.valid ? (
           <>
-            <h1 className="mt-2 font-display text-2xl uppercase tracking-tight">This link cannot be used</h1>
+            <h1 className="mt-2 font-display text-3xl font-bold uppercase leading-none tracking-[0.02em] text-black">This link cannot be used</h1>
             <p className="mt-3 text-sm text-charcoal/70">{check.reason}.</p>
             <p className="mt-3 text-sm text-charcoal/70">
               Links work once and expire, so this often just means it has already been used. Request a new one and
@@ -29,7 +29,7 @@ export default async function SetPasswordPage({
           </>
         ) : (
           <>
-            <h1 className="mt-2 font-display text-2xl uppercase tracking-tight">
+            <h1 className="mt-2 font-display text-3xl font-bold uppercase leading-none tracking-[0.02em] text-black">
               {check.record.purpose === "SET_INITIAL" ? "Choose your password" : "Set a new password"}
             </h1>
             <p className="mt-3 text-sm text-charcoal/70">

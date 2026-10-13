@@ -23,7 +23,7 @@ export default async function LocalItemsPage() {
     <div className="space-y-6">
       <div>
         <p className="eyebrow">Sourcing</p>
-        <h1 className="mt-1 font-display text-3xl uppercase tracking-tight">Items not yet in the ERP</h1>
+        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">Items not yet in the ERP</h1>
         <p className="mt-1 text-sm text-charcoal/60">
           Create something here to start an RFQ before the item exists in Dynamics 365, then record the ERP number
           once it has been created.

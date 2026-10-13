@@ -82,7 +82,7 @@ export default async function Dashboard() {
     <div className="space-y-10">
       <div>
         <p className="eyebrow">Overview</p>
-        <h1 className="mt-1 font-display text-3xl uppercase tracking-tight">Dashboard</h1>
+        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">Dashboard</h1>
       </div>
 
       {/* Sourcing first: an RFQ with every quote in is the thing most likely

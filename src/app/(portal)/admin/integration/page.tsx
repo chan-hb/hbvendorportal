@@ -32,7 +32,7 @@ export default async function IntegrationPage() {
     <div className="space-y-6">
       <div>
         <p className="eyebrow">Administration</p>
-        <h1 className="mt-1 font-display text-3xl uppercase tracking-tight">Dynamics 365 integration</h1>
+        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">Dynamics 365 integration</h1>
         <p className="mt-1 text-sm text-charcoal/60">
           Service principal credentials, entity names and the legal entities in scope.
           {settings.updatedBy ? ` Last changed by ${settings.updatedBy} on ${dateTime(settings.updatedAt)}.` : ""}

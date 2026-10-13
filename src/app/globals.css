@@ -2,60 +2,100 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Visual language taken from hudabeauty.com: white surfaces rather than tinted
+ * ones, black type, pink reserved for action and emphasis, and uppercase
+ * condensed labels. Deliberately not the retail layout, which is image led and
+ * sales driven. This is a working tool, so density and legibility win over
+ * drama, and the brand shows in the palette and the typography instead.
+ */
+
 :root {
-  --pink: #ed3b86;
-  --cloud: #f0edea;
-  --charcoal: #454041;
-  --vanta: #1a1a1a;
-  --line: #dfd9d4;
+  --pink: #eb3986;
+  --pink-600: #d12a73;
+  --black: #000000;
+  --charcoal: #1a1a1a;
+  --muted: #6e6e6e;
+  --cloud: #f6f4f2;
+  --line: #e3e0dd;
 }
 
-html, body { background: var(--cloud); color: var(--charcoal); }
+html,
+body {
+  background: #ffffff;
+  color: var(--charcoal);
+}
 
 body {
-  font-family: "Review", Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), "Helvetica Neue", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--pink);
+  color: #ffffff;
 }
 
 @layer components {
   .eyebrow {
-    @apply text-[11px] font-bold uppercase tracking-[0.18em] text-pink;
+    @apply text-[10px] font-bold uppercase tracking-[0.22em] text-pink;
   }
+
+  /* Panels sit on white with a hairline, rather than as tinted cards. */
   .panel {
     @apply border border-line bg-white;
   }
+
   .field-label {
-    @apply mb-1 block text-[11px] font-bold uppercase tracking-[0.14em] text-charcoal/70;
+    @apply mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-muted;
   }
+
   .input {
-    @apply w-full border border-line bg-white px-3 py-2 text-sm text-charcoal
-           outline-none transition focus:border-pink focus:ring-1 focus:ring-pink/30;
+    @apply w-full border border-line bg-white px-3.5 py-2.5 text-sm text-charcoal
+           outline-none transition placeholder:text-muted/60
+           focus:border-black focus:ring-0;
   }
+
+  /* Pill buttons, as on the storefront. */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 border px-4 py-2 text-[11px]
-           font-bold uppercase tracking-[0.14em] transition disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-pill border px-6 py-2.5
+           text-[11px] font-bold uppercase tracking-[0.14em] transition
+           disabled:cursor-not-allowed disabled:opacity-40;
   }
   .btn-primary {
-    @apply btn border-pink bg-pink text-white hover:bg-pink-600 hover:border-pink-600;
+    @apply btn border-black bg-black text-white hover:bg-pink hover:border-pink;
   }
   .btn-ghost {
-    @apply btn border-line bg-white text-charcoal hover:border-charcoal;
+    @apply btn border-black/20 bg-white text-charcoal hover:border-black;
   }
   .btn-dark {
-    @apply btn border-vanta bg-vanta text-white hover:opacity-90;
+    @apply btn border-pink bg-pink text-white hover:bg-pink-600 hover:border-pink-600;
   }
+
   .badge {
     @apply inline-flex items-center rounded-pill border px-2.5 py-0.5 text-[10px]
-           font-bold uppercase tracking-[0.12em];
+           font-bold uppercase tracking-[0.1em];
   }
+
   .th {
-    @apply px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.14em] text-charcoal/60;
+    @apply px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.16em] text-muted;
   }
   .td {
-    @apply px-4 py-3 text-sm align-top;
+    @apply px-4 py-3.5 align-top text-sm;
+  }
+
+  /* The slim strip across the top, echoing the storefront's promo bar. */
+  .promo-bar {
+    @apply bg-black py-2 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-white;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
