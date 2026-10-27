@@ -37,7 +37,7 @@ export default async function AgreementDetail({ params }: { params: Promise<{ id
           <Link href="/agreements" className="text-[11px] font-bold uppercase tracking-[0.12em] text-charcoal/50 hover:text-pink">
             Back to list
           </Link>
-          <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">{agreement.reference}</h1>
+          <h1 className="page-title mt-2">{agreement.reference}</h1>
           <p className="mt-1 text-sm text-charcoal/60">
             {agreement.vendor.name} ({agreement.vendor.code}) . {agreement.dataAreaId.toUpperCase()}
           </p>

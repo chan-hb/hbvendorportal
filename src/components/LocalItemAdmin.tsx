@@ -28,7 +28,7 @@ export function LocalItemAdmin({ items }: { items: LocalItem[] }) {
     <div className="space-y-6">
       <section className="panel">
         <header className="border-b border-line px-5 py-4">
-          <h2 className="text-sm font-bold uppercase tracking-[0.14em]">Create an item</h2>
+          <h2 className="section-title">Create an item</h2>
           <p className="mt-1 text-xs text-charcoal/60">
             For things you want to source before they exist in Dynamics 365. Each gets a local code you can quote
             against straight away, and an ERP number recorded later once the item is created.
@@ -36,12 +36,12 @@ export function LocalItemAdmin({ items }: { items: LocalItem[] }) {
         </header>
         <form action={createAction} className="grid gap-5 p-5 md:grid-cols-3">
           {createState?.error ? (
-            <p className="border border-[#A32B2B]/30 bg-[#FBEAEA] px-4 py-3 text-sm text-[#A32B2B] md:col-span-3">
+            <p className="alert-error md:col-span-3">
               {createState.error}
             </p>
           ) : null}
           {createState?.ok ? (
-            <p className="border border-[#2C6B44]/25 bg-[#EAF4EE] px-4 py-3 text-sm text-[#2C6B44] md:col-span-3">
+            <p className="alert-ok md:col-span-3">
               {createState.ok}
             </p>
           ) : null}
@@ -78,14 +78,14 @@ export function LocalItemAdmin({ items }: { items: LocalItem[] }) {
 
       <section className="panel">
         <header className="border-b border-line px-5 py-4">
-          <h2 className="text-sm font-bold uppercase tracking-[0.14em]">Locally created items</h2>
+          <h2 className="section-title">Locally created items</h2>
         </header>
 
         {linkState?.error ? (
           <p className="border-b border-[#A32B2B]/30 bg-[#FBEAEA] px-5 py-3 text-sm text-[#A32B2B]">{linkState.error}</p>
         ) : null}
         {linkState?.ok ? (
-          <p className="border-b border-[#2C6B44]/25 bg-[#EAF4EE] px-5 py-3 text-sm text-[#2C6B44]">{linkState.ok}</p>
+          <p className="border-b border-vanta/25 bg-cloud px-5 py-3 text-sm text-vanta">{linkState.ok}</p>
         ) : null}
 
         <div className="overflow-x-auto">
@@ -118,9 +118,9 @@ export function LocalItemAdmin({ items }: { items: LocalItem[] }) {
                         <div>
                           <span className="font-medium">{i.erpItemNumber}</span>
                           {i.inMaster ? (
-                            <span className="ml-2 badge border-[#2C6B44]/25 bg-[#EAF4EE] text-[#2C6B44]">In master</span>
+                            <span className="ml-2 badge state-done">In master</span>
                           ) : (
-                            <span className="ml-2 badge border-nude/40 bg-[#FBF0E8] text-nude">Awaiting sync</span>
+                            <span className="ml-2 badge state-waiting">Awaiting sync</span>
                           )}
                         </div>
                       ) : (

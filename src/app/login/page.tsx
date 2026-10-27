@@ -9,22 +9,26 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[7fr_5fr]">
-      <section className="relative hidden flex-col items-center justify-center bg-pink p-12 lg:flex">
-        {/* The artwork is black, so it is inverted to white for the pink panel. */}
+      {/* Cover treatment: full-bleed Power Pink, white display text bottom
+          left, wordmark small in the corner. */}
+      <section className="relative hidden flex-col justify-end bg-pink p-12 lg:flex">
+        <h1 className="font-display text-[84px] font-black uppercase leading-[0.84] tracking-[-0.02em] text-white">
+          Supplier
+          <br />
+          Portal
+        </h1>
+        <p className="mt-8 max-w-sm text-sm leading-relaxed text-white/85">
+          Quotations, trade agreements and pricing, in one place.
+        </p>
+        {/* White wordmark on pink, per the logo rules. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/hb-logo.png"
           alt="Huda Beauty"
           width={2048}
           height={358}
-          className="w-full max-w-sm [filter:brightness(0)_invert(1)]"
+          className="absolute bottom-10 right-12 w-28 [filter:brightness(0)_invert(1)]"
         />
-        <p className="mt-8 text-center text-[11px] font-bold uppercase tracking-[0.3em] text-white/80">
-          Supplier portal
-        </p>
-        <p className="mt-6 max-w-xs text-center text-sm leading-relaxed text-white/85">
-          Quotations, trade agreements and pricing, in one place.
-        </p>
       </section>
 
       <section className="flex flex-col justify-center px-8 py-16 sm:px-16">
@@ -38,7 +42,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           className="mb-10 w-40 lg:hidden"
         />
         <p className="eyebrow">Sign in</p>
-        <h2 className="mt-3 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">
+        <h2 className="page-title mt-2">
           Welcome back
         </h2>
         <p className="mt-3 text-sm text-charcoal/70">
@@ -47,7 +51,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </p>
 
         {error ? (
-          <div className="mt-6 border border-[#A32B2B]/30 bg-[#FBEAEA] px-4 py-3 text-sm text-[#A32B2B]">
+          <div className="mt-6 alert-error">
             {decodeURIComponent(error)}
           </div>
         ) : null}

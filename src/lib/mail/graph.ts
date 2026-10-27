@@ -96,7 +96,7 @@ export async function sendViaGraph(message: MailMessage): Promise<MailResult> {
   const html = omitted.length
     ? message.html.replace(
         "</body>",
-        `<p style="font-family:Arial,sans-serif;font-size:12px;color:#8a8384;padding:0 32px">Some files were too large to attach (${omitted.join(
+        `<p style="font-family:Arial,sans-serif;font-size:12px;color:#454041;padding:0 32px">Some files were too large to attach (${omitted.join(
           ", ",
         )}). Sign in to the portal to download them.</p></body>`,
       )

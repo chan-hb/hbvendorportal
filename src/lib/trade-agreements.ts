@@ -30,7 +30,7 @@ export const LIVE_STATE_LABEL: Record<LiveState, string> = {
 };
 
 export const LIVE_STATE_CLASS: Record<LiveState, string> = {
-  active: "bg-[#EAF4EE] text-[#2C6B44] border-[#2C6B44]/25",
+  active: "bg-cloud text-vanta border-vanta/25",
   scheduled: "bg-pink-50 text-pink-600 border-pink/30",
   expired: "bg-cloud text-charcoal/60 border-line",
 };

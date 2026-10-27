@@ -8,7 +8,7 @@ export default function ForgotPasswordPage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/hb-logo.png" alt="Huda Beauty" width={2048} height={358} className="mb-8 w-36" />
         <p className="eyebrow">Password</p>
-        <h1 className="mt-2 font-display text-3xl font-bold uppercase leading-none tracking-[0.02em] text-black">Forgotten your password?</h1>
+        <h1 className="page-title mt-2">Forgotten your password?</h1>
         <p className="mt-3 text-sm text-charcoal/70">
           Enter the address you sign in with and we will send you a link to choose a new one.
         </p>

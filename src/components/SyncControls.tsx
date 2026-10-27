@@ -27,10 +27,10 @@ export function SyncControls({ legalEntities }: { legalEntities: string[] }) {
   return (
     <div className="space-y-4 p-5">
       {message?.error ? (
-        <p className="border border-[#A32B2B]/30 bg-[#FBEAEA] px-4 py-3 text-sm text-[#A32B2B]">{message.error}</p>
+        <p className="alert-error">{message.error}</p>
       ) : null}
       {message?.ok ? (
-        <p className="border border-[#2C6B44]/25 bg-[#EAF4EE] px-4 py-3 text-sm text-[#2C6B44]">{message.ok}</p>
+        <p className="alert-ok">{message.ok}</p>
       ) : null}
 
       <div className="flex flex-wrap items-end gap-5 border-b border-line pb-4">

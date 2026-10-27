@@ -13,10 +13,10 @@ import {
 
 function Alert({ state }: { state: AuthState }) {
   if (state?.error) {
-    return <p className="border border-[#A32B2B]/30 bg-[#FBEAEA] px-4 py-3 text-sm text-[#A32B2B]">{state.error}</p>;
+    return <p className="alert-error">{state.error}</p>;
   }
   if (state?.ok) {
-    return <p className="border border-[#2C6B44]/25 bg-[#EAF4EE] px-4 py-3 text-sm text-[#2C6B44]">{state.ok}</p>;
+    return <p className="alert-ok">{state.ok}</p>;
   }
   return null;
 }
@@ -28,7 +28,7 @@ function strengthOf(value: string): { label: string; pct: number; tone: string }
   if (length < 12) return { label: "Too short", pct: 25, tone: "bg-[#A32B2B]" };
   if (length < 16) return { label: "Acceptable", pct: 55, tone: "bg-nude" };
   if (length < 24) return { label: "Good", pct: 80, tone: "bg-pink" };
-  return { label: "Strong", pct: 100, tone: "bg-[#2C6B44]" };
+  return { label: "Strong", pct: 100, tone: "bg-[#1A1A1A]" };
 }
 
 function PasswordFields({

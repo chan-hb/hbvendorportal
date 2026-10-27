@@ -3,91 +3,166 @@
 @tailwind utilities;
 
 /*
- * Visual language taken from hudabeauty.com: white surfaces rather than tinted
- * ones, black type, pink reserved for action and emphasis, and uppercase
- * condensed labels. Deliberately not the retail layout, which is image led and
- * sales driven. This is a working tool, so density and legibility win over
- * drama, and the brand shows in the palette and the typography instead.
+ * Huda Beauty visual guidelines, applied.
+ *
+ * Cloud as the working background rather than white, HB Charcoal rather than
+ * black for body copy, Power Pink owning headlines and calls to action, and
+ * display type set all caps and tightly tracked.
+ *
+ * If the Review font files are licensed for internal tools, drop the woff2
+ * files into /public/fonts and uncomment the @font-face blocks below. Nothing
+ * else needs changing: the stacks already name Review first.
  */
 
+/*
+@font-face {
+  font-family: "Review Poster";
+  src: url("/fonts/ReviewPoster-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Review Condensed";
+  src: url("/fonts/ReviewCondensed-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Review";
+  src: url("/fonts/Review-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+*/
+
 :root {
-  --pink: #eb3986;
-  --pink-600: #d12a73;
-  --black: #000000;
-  --charcoal: #1a1a1a;
-  --muted: #6e6e6e;
-  --cloud: #f6f4f2;
-  --line: #e3e0dd;
+  --power-pink: #ed3b86;
+  --power-pink-600: #d42f76;
+  --new-nude: #c9907a;
+  --cloud: #f0edea;
+  --very-vanta: #1a1a1a;
+  --hb-charcoal: #454041;
+  --line: #dfd9d4;
 }
 
 html,
 body {
-  background: #ffffff;
-  color: var(--charcoal);
+  background: var(--cloud);
+  color: var(--hb-charcoal);
 }
 
 body {
-  font-family: var(--font-body), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: "Review", Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: var(--pink);
+  background: var(--power-pink);
   color: #ffffff;
 }
 
 @layer components {
+  /* Headline colour defaults to Power Pink, per the guidelines. */
+  .page-title {
+    @apply font-display text-4xl font-black uppercase leading-[0.9] tracking-[-0.01em] text-pink sm:text-5xl;
+  }
+  .section-title {
+    @apply font-headline text-sm font-black uppercase tracking-[0.12em] text-charcoal;
+  }
   .eyebrow {
-    @apply text-[10px] font-bold uppercase tracking-[0.22em] text-pink;
+    @apply font-headline text-[11px] font-black uppercase tracking-[0.2em] text-pink;
   }
 
-  /* Panels sit on white with a hairline, rather than as tinted cards. */
+  /* White inner panels on the Cloud background. */
   .panel {
     @apply border border-line bg-white;
   }
 
   .field-label {
-    @apply mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-muted;
+    @apply mb-1.5 block font-headline text-[11px] font-bold uppercase tracking-[0.14em] text-charcoal/70;
   }
 
   .input {
     @apply w-full border border-line bg-white px-3.5 py-2.5 text-sm text-charcoal
-           outline-none transition placeholder:text-muted/60
-           focus:border-black focus:ring-0;
+           outline-none transition placeholder:text-charcoal/40
+           focus:border-pink focus:ring-1 focus:ring-pink/25;
   }
 
-  /* Pill buttons, as on the storefront. */
+  /* Capsule shapes, as the guidelines specify for brand labels. */
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-pill border px-6 py-2.5
-           text-[11px] font-bold uppercase tracking-[0.14em] transition
+           font-headline text-[11px] font-bold uppercase tracking-[0.14em] transition
            disabled:cursor-not-allowed disabled:opacity-40;
   }
   .btn-primary {
-    @apply btn border-black bg-black text-white hover:bg-pink hover:border-pink;
+    @apply btn border-pink bg-pink text-white hover:border-pink-600 hover:bg-pink-600;
   }
   .btn-ghost {
-    @apply btn border-black/20 bg-white text-charcoal hover:border-black;
+    @apply btn border-charcoal/25 bg-white text-charcoal hover:border-charcoal;
   }
   .btn-dark {
-    @apply btn border-pink bg-pink text-white hover:bg-pink-600 hover:border-pink-600;
+    @apply btn border-vanta bg-vanta text-white hover:opacity-90;
   }
 
   .badge {
-    @apply inline-flex items-center rounded-pill border px-2.5 py-0.5 text-[10px]
-           font-bold uppercase tracking-[0.1em];
+    @apply inline-flex items-center rounded-pill border px-3 py-0.5 font-headline
+           text-[10px] font-bold uppercase tracking-[0.1em];
+  }
+  /* The brand label treatment: Power Pink fill, white text. */
+  .badge-brand {
+    @apply badge border-pink bg-pink text-white;
   }
 
   .th {
-    @apply px-4 py-3 text-left text-[10px] font-bold uppercase tracking-[0.16em] text-muted;
+    @apply px-4 py-3 text-left font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-charcoal/60;
   }
   .td {
     @apply px-4 py-3.5 align-top text-sm;
   }
 
-  /* The slim strip across the top, echoing the storefront's promo bar. */
+  /*
+   * Status colour.
+   *
+   * The guidelines rule out greens and cool greys, so "approved" and "sent"
+   * use Very Vanta rather than the usual green: dark reads as settled and
+   * final, which is the right meaning here. Pending uses Power Pink, and
+   * anything awaiting the other side uses New Nude.
+   *
+   * Red is kept for rejection and failure only. It is not on the forbidden
+   * list, and these states have to be unmistakable at a glance in a queue
+   * where somebody is deciding what to act on. Colour is carrying meaning
+   * here, not decoration.
+   */
+  .state-done {
+    @apply border-vanta bg-vanta text-white;
+  }
+  .state-pending {
+    @apply border-pink bg-pink-50 text-pink-600;
+  }
+  .state-waiting {
+    @apply border-nude bg-[#FBF0E8] text-nude;
+  }
+  .state-stopped {
+    @apply border-[#A32B2B] bg-[#FBEAEA] text-[#A32B2B];
+  }
+  .state-quiet {
+    @apply border-line bg-cloud text-charcoal/70;
+  }
+
+  /* Inline feedback, so the same two treatments are used everywhere. */
+  .alert-ok {
+    @apply border border-vanta/25 bg-white px-4 py-3 text-sm text-vanta;
+  }
+  .alert-error {
+    @apply border border-[#A32B2B]/30 bg-[#FBEAEA] px-4 py-3 text-sm text-[#A32B2B];
+  }
+  .alert-note {
+    @apply border border-nude/40 bg-[#FBF0E8] px-4 py-3 text-sm text-nude;
+  }
+
   .promo-bar {
-    @apply bg-black py-2 text-center text-[10px] font-bold uppercase tracking-[0.22em] text-white;
+    @apply bg-vanta py-2 text-center font-headline text-[10px] font-bold uppercase tracking-[0.22em] text-white;
   }
 }
 

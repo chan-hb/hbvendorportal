@@ -82,14 +82,14 @@ export default async function Dashboard() {
     <div className="space-y-10">
       <div>
         <p className="eyebrow">Overview</p>
-        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">Dashboard</h1>
+        <h1 className="page-title mt-2">Dashboard</h1>
       </div>
 
       {/* Sourcing first: an RFQ with every quote in is the thing most likely
           to be holding someone up. */}
       <section className="space-y-4">
         <div className="flex items-end justify-between gap-4">
-          <h2 className="text-sm font-bold uppercase tracking-[0.14em]">Requests for quotation</h2>
+          <h2 className="section-title">Requests for quotation</h2>
           <Link href="/rfq/new" className="text-[11px] font-bold uppercase tracking-[0.12em] text-pink hover:underline">
             New RFQ
           </Link>
@@ -102,7 +102,7 @@ export default async function Dashboard() {
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-sm font-bold uppercase tracking-[0.14em]">Trade agreements</h2>
+        <h2 className="section-title">Trade agreements</h2>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {agreementTiles.map((t) => (
             <Tile key={t.label} {...t} />
@@ -142,7 +142,7 @@ export default async function Dashboard() {
                         {outstanding > 0 ? (
                           <span className="block text-charcoal/55">{outstanding} outstanding</span>
                         ) : (
-                          <span className="block text-[#2C6B44]">All in</span>
+                          <span className="block text-vanta">All in</span>
                         )}
                       </td>
                     </tr>
@@ -192,7 +192,7 @@ export default async function Dashboard() {
                   </p>
                   {r.message ? <p className="mt-1 text-xs text-[#A32B2B]">{r.message.slice(0, 160)}</p> : null}
                 </div>
-                <span className="badge border-line bg-cloud text-charcoal/70">{r.status}</span>
+                <span className="badge state-quiet">{r.status}</span>
               </li>
             ))
           )}
@@ -206,7 +206,7 @@ function Tile({ label, value, href, accent }: { label: string; value: number; hr
   return (
     <Link href={href} className={`panel block p-5 transition hover:border-pink ${accent ? "border-pink/40" : ""}`}>
       <p className="field-label">{label}</p>
-      <p className={`font-display text-4xl tracking-tight ${accent ? "text-pink" : "text-charcoal"}`}>{value}</p>
+      <p className={`font-display text-5xl font-black leading-none tracking-[-0.01em] ${accent ? "text-pink" : "text-vanta"}`}>{value}</p>
     </Link>
   );
 }

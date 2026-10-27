@@ -34,9 +34,9 @@ export default async function PortalLayout({
 
   return (
     <div className="min-h-screen">
-      <div className="promo-bar">Supplier portal</div>
+      <div className="promo-bar">Huda Beauty supplier portal</div>
 
-      <header className="sticky top-0 z-30 border-b border-line bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-line bg-white">
         <div className="mx-auto flex max-w-[1400px] items-center gap-6 px-6 py-4">
           <Link href="/" className="shrink-0 transition hover:opacity-70" aria-label="Huda Beauty, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -46,13 +46,13 @@ export default async function PortalLayout({
           <div className="ml-auto flex items-center gap-5">
             <Link
               href="/account/password"
-              className="hidden text-[10px] font-bold uppercase tracking-[0.16em] text-muted hover:text-pink sm:block"
+              className="hidden font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-charcoal/60 hover:text-pink sm:block"
             >
               Password
             </Link>
             <div className="hidden text-right leading-tight sm:block">
               <p className="text-xs font-semibold text-charcoal">{user.email}</p>
-              <p className="text-[10px] uppercase tracking-[0.14em] text-muted">
+              <p className="font-headline text-[10px] uppercase tracking-[0.14em] text-charcoal/60">
                 {user.vendorName ?? roleLabel(user.role)}
                 {canApprove(user.role) ? " . Approver" : ""}
               </p>
@@ -63,7 +63,7 @@ export default async function PortalLayout({
                 await signOut({ redirectTo: "/login" });
               }}
             >
-              <button className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted hover:text-pink">
+              <button className="font-headline text-[10px] font-bold uppercase tracking-[0.16em] text-charcoal/60 hover:text-pink">
                 Sign out
               </button>
             </form>
@@ -78,7 +78,7 @@ export default async function PortalLayout({
               <Link
                 key={n.href}
                 href={n.href}
-                className="whitespace-nowrap text-[11px] font-bold uppercase tracking-[0.16em] text-charcoal transition hover:text-pink"
+                className="whitespace-nowrap font-headline text-[11px] font-bold uppercase tracking-[0.16em] text-charcoal transition hover:text-pink"
               >
                 {n.label}
               </Link>

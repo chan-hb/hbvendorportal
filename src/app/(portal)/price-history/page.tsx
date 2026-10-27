@@ -24,7 +24,7 @@ export default async function PriceHistoryPage({
     <div className="space-y-6">
       <div>
         <p className="eyebrow">Trade agreements</p>
-        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">Price history</h1>
+        <h1 className="page-title mt-2">Price history</h1>
         <p className="mt-1 text-sm text-charcoal/60">
           Every price on record, from Dynamics 365 and from decided portal requests, in one chronology. The change
           column compares each price with the one it replaced for that item, vendor and entity.
@@ -103,7 +103,7 @@ export default async function PriceHistoryPage({
                       {e.changePercent === null ? (
                         <span className="text-xs text-charcoal/45">First on record</span>
                       ) : (
-                        <span className={e.changePercent > 0 ? "text-[#A32B2B]" : e.changePercent < 0 ? "text-[#2C6B44]" : ""}>
+                        <span className={e.changePercent > 0 ? "text-[#A32B2B]" : e.changePercent < 0 ? "text-vanta" : ""}>
                           {e.changePercent > 0 ? "+" : ""}{e.changePercent.toFixed(1)}%
                         </span>
                       )}
@@ -111,13 +111,13 @@ export default async function PriceHistoryPage({
                     <td className="td whitespace-nowrap">{shortDate(e.toDate)}</td>
                     <td className="td">
                       {e.source === "D365" ? (
-                        <span className="badge border-line bg-cloud text-charcoal/60">Dynamics 365</span>
+                        <span className="badge state-quiet">Dynamics 365</span>
                       ) : (
                         <span
                           className={`badge ${
                             e.status === "REJECTED"
-                              ? "border-[#A32B2B]/25 bg-[#FBEAEA] text-[#A32B2B]"
-                              : "border-pink/30 bg-pink-50 text-pink-600"
+                              ? "state-stopped"
+                              : "state-pending"
                           }`}
                         >
                           {e.status === "REJECTED" ? `${e.reference} rejected` : e.reference}

@@ -32,7 +32,7 @@ export default async function RfqSettingsPage() {
     <div className="space-y-6">
       <div>
         <p className="eyebrow">Purchasing</p>
-        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">RFQ settings</h1>
+        <h1 className="page-title mt-2">RFQ settings</h1>
         <p className="mt-1 text-sm text-charcoal/60">
           Sender address, standard quantity breaks and default terms.
           {settings.updatedBy ? ` Last changed by ${settings.updatedBy} on ${dateTime(settings.updatedAt)}.` : ""}

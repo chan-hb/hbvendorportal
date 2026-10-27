@@ -52,7 +52,7 @@ export function RfqForm({
   return (
     <form action={formAction} className="space-y-6 p-6">
       {state?.error ? (
-        <p className="border border-[#A32B2B]/30 bg-[#FBEAEA] px-4 py-3 text-sm text-[#A32B2B]">{state.error}</p>
+        <p className="alert-error">{state.error}</p>
       ) : null}
 
       <div>
@@ -111,7 +111,7 @@ export function RfqForm({
         <div>
           <label className="field-label" htmlFor="localItemId">Local item</label>
           {localItems.length === 0 ? (
-            <p className="border border-nude/40 bg-[#FBF0E8] px-4 py-3 text-sm text-nude">
+            <p className="alert-note">
               Nothing created yet. Create one on the New items page first.
             </p>
           ) : (

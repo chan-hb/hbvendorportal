@@ -54,7 +54,7 @@ export function UserAdmin({ users }: { users: UserRow[] }) {
     <div className="space-y-6">
       <section className="panel">
         <header className="border-b border-line px-5 py-4">
-          <h2 className="text-sm font-bold uppercase tracking-[0.14em]">Create an account</h2>
+          <h2 className="section-title">Create an account</h2>
           <p className="mt-1 text-xs text-charcoal/60">
             The address must already be recognised: a Huda Beauty domain, a registered vendor domain, or one
             allow-listed on the Vendors page. They receive a link to choose their own password.
@@ -62,12 +62,12 @@ export function UserAdmin({ users }: { users: UserRow[] }) {
         </header>
         <form action={createAction} className="grid gap-5 p-5 md:grid-cols-4">
           {createState?.error ? (
-            <p className="border border-[#A32B2B]/30 bg-[#FBEAEA] px-4 py-3 text-sm text-[#A32B2B] md:col-span-4">
+            <p className="alert-error md:col-span-4">
               {createState.error}
             </p>
           ) : null}
           {createState?.ok ? (
-            <p className="border border-[#2C6B44]/25 bg-[#EAF4EE] px-4 py-3 text-sm text-[#2C6B44] md:col-span-4">
+            <p className="alert-ok md:col-span-4">
               {createState.ok}
             </p>
           ) : null}
@@ -101,7 +101,7 @@ export function UserAdmin({ users }: { users: UserRow[] }) {
           className={`border px-4 py-3 text-sm ${
             linkState?.error || tempState?.error || roleState?.error
               ? "border-[#A32B2B]/30 bg-[#FBEAEA] text-[#A32B2B]"
-              : "border-[#2C6B44]/25 bg-[#EAF4EE] text-[#2C6B44]"
+              : "state-done"
           }`}
         >
           {linkState?.error ?? tempState?.error ?? roleState?.error ?? linkState?.ok}
@@ -110,7 +110,7 @@ export function UserAdmin({ users }: { users: UserRow[] }) {
 
       <section className="panel">
         <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line px-5 py-4">
-          <h2 className="text-sm font-bold uppercase tracking-[0.14em]">Accounts</h2>
+          <h2 className="section-title">Accounts</h2>
           <div>
             <label className="field-label" htmlFor="filter">Find</label>
             <input
@@ -156,11 +156,11 @@ export function UserAdmin({ users }: { users: UserRow[] }) {
                     </td>
                     <td className="td text-xs">
                       {!u.hasPassword ? (
-                        <span className="badge border-nude/40 bg-[#FBF0E8] text-nude">Not set up</span>
+                        <span className="badge state-waiting">Not set up</span>
                       ) : u.mustChangePassword ? (
-                        <span className="badge border-nude/40 bg-[#FBF0E8] text-nude">Temporary</span>
+                        <span className="badge state-waiting">Temporary</span>
                       ) : (
-                        <span className="badge border-[#2C6B44]/25 bg-[#EAF4EE] text-[#2C6B44]">Set</span>
+                        <span className="badge state-done">Set</span>
                       )}
                       {u.failedLoginCount > 0 ? (
                         <span className="mt-1 block text-charcoal/55">{u.failedLoginCount} failed attempts</span>
@@ -175,8 +175,8 @@ export function UserAdmin({ users }: { users: UserRow[] }) {
                         <button
                           className={`badge ${
                             u.isActive
-                              ? "border-[#2C6B44]/25 bg-[#EAF4EE] text-[#2C6B44]"
-                              : "border-line bg-cloud text-charcoal/60"
+                              ? "state-done"
+                              : "state-quiet"
                           }`}
                         >
                           {u.isActive ? "Active" : "Disabled"}

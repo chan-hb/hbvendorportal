@@ -32,7 +32,7 @@ export default async function IntegrationPage() {
     <div className="space-y-6">
       <div>
         <p className="eyebrow">Administration</p>
-        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">Dynamics 365 integration</h1>
+        <h1 className="page-title mt-2">Dynamics 365 integration</h1>
         <p className="mt-1 text-sm text-charcoal/60">
           Service principal credentials, entity names and the legal entities in scope.
           {settings.updatedBy ? ` Last changed by ${settings.updatedBy} on ${dateTime(settings.updatedAt)}.` : ""}
@@ -64,7 +64,7 @@ export default async function IntegrationPage() {
       </Panel>
 
       {settings.timeBudgetSeconds >= 300 ? (
-        <p className="border border-nude/40 bg-[#FBF0E8] px-4 py-3 text-sm text-nude">
+        <p className="alert-note">
           The time budget is {settings.timeBudgetSeconds} seconds, at or above the maximum a function is
           allowed to run. A budget that cannot be reached means the run is killed before it checkpoints.
           Set it below your plan&apos;s function limit, leaving room for the last page to finish writing.
@@ -98,9 +98,9 @@ export default async function IntegrationPage() {
                     <td className="td uppercase">{c.dataAreaId}</td>
                     <td className="td">
                       {c.nextLink ? (
-                        <span className="badge border-nude/40 bg-[#FBF0E8] text-nude">Resumes next run</span>
+                        <span className="badge state-waiting">Resumes next run</span>
                       ) : (
-                        <span className="badge border-[#2C6B44]/25 bg-[#EAF4EE] text-[#2C6B44]">Complete</span>
+                        <span className="badge state-done">Complete</span>
                       )}
                     </td>
                     <td className="td text-xs">{c.watermark ? dateTime(c.watermark) : "Full pull"}</td>

@@ -7,11 +7,11 @@ import { shortDate } from "@/lib/format";
 import { EmptyState, Panel } from "@/components/Panel";
 
 const STATUS_CLASS: Record<string, string> = {
-  DRAFT: "bg-cloud text-charcoal border-line",
-  OPEN: "bg-pink-50 text-pink-600 border-pink/30",
-  CLOSED: "bg-[#FBF0E8] text-nude border-nude/40",
-  AWARDED: "bg-[#EAF4EE] text-[#2C6B44] border-[#2C6B44]/25",
-  CANCELLED: "bg-[#FBEAEA] text-[#A32B2B] border-[#A32B2B]/25",
+  DRAFT: "state-quiet",
+  OPEN: "state-pending",
+  CLOSED: "state-waiting",
+  AWARDED: "state-done",
+  CANCELLED: "state-stopped",
 };
 
 export default async function RfqListPage({
@@ -44,7 +44,7 @@ export default async function RfqListPage({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="eyebrow">Sourcing</p>
-          <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">
+          <h1 className="page-title mt-2">
             {internal ? "Requests for quotation" : "Invitations to quote"}
           </h1>
           <p className="mt-1 text-sm text-charcoal/60">

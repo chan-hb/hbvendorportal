@@ -29,10 +29,14 @@ export const STATUS_LABEL: Record<AgreementStatus, string> = {
   REJECTED: "Rejected",
 };
 
+/**
+ * Status uses the shared state classes, so the brand palette is defined once
+ * in globals.css rather than scattered through components.
+ */
 export const STATUS_CLASS: Record<AgreementStatus, string> = {
-  DRAFT: "bg-cloud text-charcoal border-line",
-  SUBMITTED: "bg-pink-50 text-pink-600 border-pink/30",
-  CHANGE_REQUESTED: "bg-[#FBF0E8] text-nude border-nude/40",
-  APPROVED: "bg-[#EAF4EE] text-[#2C6B44] border-[#2C6B44]/25",
-  REJECTED: "bg-[#FBEAEA] text-[#A32B2B] border-[#A32B2B]/25",
+  DRAFT: "state-quiet",
+  SUBMITTED: "state-pending",
+  CHANGE_REQUESTED: "state-waiting",
+  APPROVED: "state-done",
+  REJECTED: "state-stopped",
 };

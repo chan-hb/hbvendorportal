@@ -81,15 +81,15 @@ export function BidComparison({
   return (
     <div className="space-y-8 p-5">
       {state?.error ? (
-        <p className="border border-[#A32B2B]/30 bg-[#FBEAEA] px-4 py-3 text-sm text-[#A32B2B]">{state.error}</p>
+        <p className="alert-error">{state.error}</p>
       ) : null}
       {state?.ok ? (
-        <p className="border border-[#2C6B44]/25 bg-[#EAF4EE] px-4 py-3 text-sm text-[#2C6B44]">{state.ok}</p>
+        <p className="alert-ok">{state.ok}</p>
       ) : null}
 
       <section className="border border-pink/40 bg-pink-50 p-5">
         <p className="eyebrow">Suggested award</p>
-        <p className="mt-2 font-display text-2xl uppercase tracking-tight text-charcoal">{best.vendorName}</p>
+        <p className="mt-2 font-display text-3xl font-black uppercase leading-none tracking-[-0.01em] text-vanta">{best.vendorName}</p>
         <p className="mt-2 text-sm leading-relaxed text-charcoal/80">{recommendation}</p>
         <p className="mt-3 text-xs text-charcoal/60">
           A weighted score across price, lead time, capacity and past RFQ results, using the weights set on this
@@ -125,7 +125,7 @@ export function BidComparison({
                     return (
                       <td
                         key={t}
-                        className={`td text-right whitespace-nowrap ${isBest ? "font-semibold text-[#2C6B44]" : ""}`}
+                        className={`td text-right whitespace-nowrap ${isBest ? "font-semibold text-vanta" : ""}`}
                       >
                         {price !== undefined ? price.toFixed(4) : <span className="text-charcoal/35">Not offered</span>}
                       </td>
@@ -166,21 +166,21 @@ export function BidComparison({
                   <tr
                     key={s.bidId}
                     className={`border-b border-line/60 ${
-                      s.bidId === awardedBidId ? "bg-[#EAF4EE]" : i === 0 ? "bg-pink-50/50" : ""
+                      s.bidId === awardedBidId ? "bg-cloud" : i === 0 ? "bg-pink-50/50" : ""
                     }`}
                   >
-                    <td className="td font-display text-lg">{i + 1}</td>
+                    <td className="td font-display text-xl font-black text-pink">{i + 1}</td>
                     <td className="td">
                       <span className="font-medium">{s.vendorName}</span>
                       {s.bidId === awardedBidId ? (
-                        <span className="ml-2 badge border-[#2C6B44]/25 bg-[#EAF4EE] text-[#2C6B44]">Awarded</span>
+                        <span className="ml-2 badge state-done">Awarded</span>
                       ) : null}
                       {s.warnings.map((w) => (
                         <span key={w} className="block text-xs text-nude">{w}</span>
                       ))}
                     </td>
                     <td className="td">
-                      <span className="font-display text-xl">{s.total}</span>
+                      <span className="font-display text-2xl font-black text-vanta">{s.total}</span>
                       <span className="text-xs text-charcoal/50"> / 100</span>
                     </td>
                     <td className="td whitespace-nowrap">

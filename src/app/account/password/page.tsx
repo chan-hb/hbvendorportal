@@ -21,7 +21,7 @@ export default async function ChangePasswordPage() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/hb-logo.png" alt="Huda Beauty" width={2048} height={358} className="mb-8 w-36" />
         <p className="eyebrow">Your account</p>
-        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">
+        <h1 className="page-title mt-2">
           {forced ? "Choose a new password" : "Change your password"}
         </h1>
         <p className="mt-2 text-sm text-charcoal/60">

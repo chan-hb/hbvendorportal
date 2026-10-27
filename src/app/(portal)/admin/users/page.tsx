@@ -13,7 +13,7 @@ export default async function UsersPage() {
     <div className="space-y-6">
       <div>
         <p className="eyebrow">Administration</p>
-        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">Users and roles</h1>
+        <h1 className="page-title mt-2">Users and roles</h1>
         <p className="mt-1 text-sm text-charcoal/60">
           Approvers can action submitted agreements. Viewers see everything but cannot decide. An account has to
           exist before anyone can sign in, and the address must be recognised first.

@@ -23,10 +23,10 @@ export function SenderPicker({
   return (
     <form action={formAction} className="space-y-4 p-5">
       {state?.error ? (
-        <p className="border border-[#A32B2B]/30 bg-[#FBEAEA] px-4 py-3 text-sm text-[#A32B2B]">{state.error}</p>
+        <p className="alert-error">{state.error}</p>
       ) : null}
       {state?.ok ? (
-        <p className="border border-[#2C6B44]/25 bg-[#EAF4EE] px-4 py-3 text-sm text-[#2C6B44]">{state.ok}</p>
+        <p className="alert-ok">{state.ok}</p>
       ) : null}
 
       <div className="max-w-md">

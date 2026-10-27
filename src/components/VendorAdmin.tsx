@@ -37,29 +37,29 @@ export function VendorAdmin({ vendors }: { vendors: Vendor[] }) {
   return (
     <div className="space-y-6">
       {accessState?.error ? (
-        <p className="border border-[#A32B2B]/30 bg-[#FBEAEA] px-4 py-3 text-sm text-[#A32B2B]">
+        <p className="alert-error">
           {accessState.error}
         </p>
       ) : null}
       {accessState?.ok ? (
-        <p className="border border-[#2C6B44]/25 bg-[#EAF4EE] px-4 py-3 text-sm text-[#2C6B44]">{accessState.ok}</p>
+        <p className="alert-ok">{accessState.ok}</p>
       ) : null}
 
       <section className="panel">
         <header className="border-b border-line px-5 py-4">
-          <h2 className="text-sm font-bold uppercase tracking-[0.14em]">Allow a single email</h2>
+          <h2 className="section-title">Allow a single email</h2>
           <p className="mt-1 text-xs text-charcoal/60">
             For contacts on shared mail domains that cannot be matched by domain.
           </p>
         </header>
         <form action={emailAction} className="flex flex-wrap items-end gap-4 p-5">
           {emailState?.error ? (
-            <p className="w-full border border-[#A32B2B]/30 bg-[#FBEAEA] px-4 py-3 text-sm text-[#A32B2B]">
+            <p className="w-full alert-error">
               {emailState.error}
             </p>
           ) : null}
           {emailState?.ok ? (
-            <p className="w-full border border-[#2C6B44]/25 bg-[#EAF4EE] px-4 py-3 text-sm text-[#2C6B44]">
+            <p className="w-full alert-ok">
               {emailState.ok}
             </p>
           ) : null}
@@ -82,7 +82,7 @@ export function VendorAdmin({ vendors }: { vendors: Vendor[] }) {
       <section className="panel">
         <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line px-5 py-4">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-[0.14em]">Vendor master</h2>
+            <h2 className="section-title">Vendor master</h2>
             <p className="mt-1 text-xs text-charcoal/60">
               Names and codes come from Dynamics 365 and are overwritten on every sync. Domains and portal
               access are yours to set.
@@ -185,9 +185,9 @@ export function VendorAdmin({ vendors }: { vendors: Vendor[] }) {
                     <td className="td">{v._count.agreements}</td>
                     <td className="td">
                       {v.isBlocked ? (
-                        <span className="badge border-[#A32B2B]/25 bg-[#FBEAEA] text-[#A32B2B]">Blocked</span>
+                        <span className="badge state-stopped">Blocked</span>
                       ) : (
-                        <span className="badge border-line bg-cloud text-charcoal/60">Open</span>
+                        <span className="badge state-quiet">Open</span>
                       )}
                     </td>
                   </tr>

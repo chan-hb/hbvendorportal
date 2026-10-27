@@ -189,7 +189,7 @@ export default async function RfqDetail({
                             <span className="block text-xs text-charcoal/55">{i.vendor.code}</span>
                           </td>
                           <td className="td">
-                            <span className="badge border-line bg-cloud text-charcoal/70">{i.status}</span>
+                            <span className="badge state-quiet">{i.status}</span>
                           </td>
                           <td className="td text-xs">
                             {i.emailSentAt ? (
@@ -335,7 +335,7 @@ function Header({ rfq, itemLabel }: { rfq: { reference: string; title: string; s
         <Link href="/rfq" className="text-[11px] font-bold uppercase tracking-[0.12em] text-charcoal/50 hover:text-pink">
           Back to RFQs
         </Link>
-        <h1 className="mt-2 font-display text-4xl font-bold uppercase leading-none tracking-[0.02em] text-black">{rfq.reference}</h1>
+        <h1 className="page-title mt-2">{rfq.reference}</h1>
         <p className="mt-1 text-sm text-charcoal/60">{rfq.title} . {itemLabel}</p>
       </div>
       <span className="badge border-line bg-white text-charcoal">{rfq.status}</span>

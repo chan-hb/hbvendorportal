@@ -24,10 +24,10 @@ export function MailDiagnostics({
   return (
     <div className="space-y-4 p-5">
       {state?.error ? (
-        <p className="border border-[#A32B2B]/30 bg-[#FBEAEA] px-4 py-3 text-sm text-[#A32B2B]">{state.error}</p>
+        <p className="alert-error">{state.error}</p>
       ) : null}
       {state?.ok ? (
-        <p className="border border-[#2C6B44]/25 bg-[#EAF4EE] px-4 py-3 text-sm text-[#2C6B44]">{state.ok}</p>
+        <p className="alert-ok">{state.ok}</p>
       ) : null}
 
       <dl className="grid gap-4 sm:grid-cols-3">
@@ -37,7 +37,7 @@ export function MailDiagnostics({
             {provider === "log" ? (
               <span className="text-[#A32B2B]">{label}</span>
             ) : (
-              <span className="text-[#2C6B44]">{label}</span>
+              <span className="text-vanta">{label}</span>
             )}
           </dd>
         </div>
@@ -52,7 +52,7 @@ export function MailDiagnostics({
       </dl>
 
       {provider === "log" ? (
-        <p className="border border-nude/40 bg-[#FBF0E8] px-4 py-3 text-sm text-nude">
+        <p className="alert-note">
           Nothing is being sent. Messages are written to the server log instead, so invitations and password links
           will not reach anyone. Add the Graph credentials in Vercel and redeploy.
         </p>
