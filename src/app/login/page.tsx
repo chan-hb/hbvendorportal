@@ -34,25 +34,25 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           alt="Huda Beauty"
           width={2048}
           height={358}
-          className="absolute bottom-10 right-12 w-28"
+          className="absolute bottom-10 right-12 w-44"
         />
       </section>
 
       <section className="flex flex-col justify-center px-8 py-16 sm:px-16">
-        {/* Shown only when the pink panel is hidden, so the logo appears once. */}
+        {/* Centred above the form, on every screen size. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/hb-logo.png"
           alt="Huda Beauty"
           width={2048}
           height={358}
-          className="mb-10 w-40 lg:hidden"
+          className="mx-auto mb-12 w-56 sm:w-64"
         />
-        <p className="eyebrow">Sign in</p>
-        <h2 className="page-title mt-2">
+        <p className="eyebrow text-center">Sign in</p>
+        <h2 className="page-title mt-2 text-center">
           Welcome back
         </h2>
-        <p className="mt-3 text-sm text-charcoal/70">
+        <p className="mt-3 text-center text-sm text-charcoal/70">
           Use the email address your account was set up with. If you have not set a password yet, check your inbox
           for the set-up link, or ask your Huda Beauty contact to send another.
         </p>
