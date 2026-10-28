@@ -20,14 +20,23 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <p className="mt-8 max-w-sm text-sm leading-relaxed text-white/85">
           Quotations, trade agreements and pricing, in one place.
         </p>
-        {/* White wordmark on pink, per the logo rules. */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/hb-logo.png"
-          alt="Huda Beauty"
-          width={2048}
-          height={358}
-          className="absolute bottom-10 right-12 w-28 [filter:brightness(0)_invert(1)]"
+        {/*
+          White wordmark on pink, per the logo rules.
+
+          Drawn as a masked block rather than an inverted image. The artwork is
+          black with a transparent background, and a brightness/invert filter on
+          a transparent PNG renders inconsistently across browsers. A mask uses
+          the alpha channel to shape a solid white element, so the colour is
+          genuinely white and no image decoding is involved.
+        */}
+        <span
+          role="img"
+          aria-label="Huda Beauty"
+          className="absolute bottom-10 right-12 block h-5 w-28 bg-white
+                     [mask-image:url('/hb-logo.png')] [mask-position:center]
+                     [mask-repeat:no-repeat] [mask-size:contain]
+                     [-webkit-mask-image:url('/hb-logo.png')] [-webkit-mask-position:center]
+                     [-webkit-mask-repeat:no-repeat] [-webkit-mask-size:contain]"
         />
       </section>
 
