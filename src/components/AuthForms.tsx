@@ -93,7 +93,20 @@ function PasswordFields({
   );
 }
 
-export function SignInForm({ entraEnabled }: { entraEnabled: boolean }) {
+export function SignInForm({
+  entraEnabled,
+  microsoftAction,
+}: {
+  entraEnabled: boolean;
+  /**
+   * Server action that calls signIn("microsoft-entra-id").
+   *
+   * Posting a plain HTML form at the Auth.js endpoint fails with MissingCSRF,
+   * because the token is never included. Going through a server action lets
+   * Auth.js issue and verify it the same way the password form does.
+   */
+  microsoftAction?: () => Promise<void>;
+}) {
   const [state, formAction] = useActionState<AuthState, FormData>(signInAction, null);
 
   return (
@@ -125,7 +138,7 @@ export function SignInForm({ entraEnabled }: { entraEnabled: boolean }) {
             Huda Beauty staff
             <span className="h-px flex-1 bg-line" />
           </div>
-          <form action="/api/auth/signin/microsoft-entra-id" method="post">
+          <form action={microsoftAction}>
             <button type="submit" className="btn-ghost w-full">Continue with Microsoft</button>
           </form>
         </>

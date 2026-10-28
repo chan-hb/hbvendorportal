@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { auth, signIn } from "@/auth";
 import { SignInForm } from "@/components/AuthForms";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
@@ -17,6 +17,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <br />
           Portal
         </h1>
+        <p className="mt-8 max-w-sm text-sm leading-relaxed text-white/85">
+          Quotations, trade agreements and pricing, in one place.
+        </p>
         {/*
           White wordmark on pink, per the logo rules.
 
@@ -39,7 +42,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         {/* Centred above the form, on every screen size. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/HBBrandLogo.jpg"
+          src="/hb-logo.png"
           alt="Huda Beauty"
           width={2048}
           height={358}
@@ -61,7 +64,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         ) : null}
 
         <div className="mt-8">
-          <SignInForm entraEnabled={!!process.env.AUTH_MICROSOFT_ENTRA_ID_ID} />
+          <SignInForm
+            entraEnabled={!!process.env.AUTH_MICROSOFT_ENTRA_ID_ID}
+            microsoftAction={async () => {
+              "use server";
+              await signIn("microsoft-entra-id", { redirectTo: "/" });
+            }}
+          />
         </div>
       </section>
     </main>
