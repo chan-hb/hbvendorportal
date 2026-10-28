@@ -17,9 +17,6 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <br />
           Portal
         </h1>
-        <p className="mt-8 max-w-sm text-sm leading-relaxed text-white/85">
-          Quotations, trade agreements and pricing, in one place.
-        </p>
         {/*
           White wordmark on pink, per the logo rules.
 
@@ -30,7 +27,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/hb-logo-white.png"
+          src="public/hb-logo-white.png"
           alt="Huda Beauty"
           width={2048}
           height={358}
