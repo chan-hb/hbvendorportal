@@ -39,7 +39,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         {/* Centred above the form, on every screen size. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/hb-logo-white.png"
+          src="/HBBrandLogo.jpg"
           alt="Huda Beauty"
           width={2048}
           height={358}
