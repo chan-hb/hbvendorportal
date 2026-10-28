@@ -27,7 +27,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="public/hb-logo-white.png"
+          src="/public/hb-logo-white.png"
           alt="Huda Beauty"
           width={2048}
           height={358}
@@ -39,7 +39,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         {/* Shown only when the pink panel is hidden, so the logo appears once. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/hb-logo.png"
+          src="/public/hb-logo.png"
           alt="Huda Beauty"
           width={2048}
           height={358}
