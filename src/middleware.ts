@@ -21,8 +21,14 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    // forgot-password and set-password are reached by people who cannot sign
-    // in, so they have to stay outside the redirect.
-    "/((?!api|login|forgot-password|set-password|_next/static|_next/image|favicon.ico).*)",
+    /*
+     * Everything except:
+     *   api, login, forgot-password, set-password  - reachable signed out
+     *   _next/static, _next/image                  - build output
+     *   anything with a file extension             - assets in /public, which
+     *     are served from the root and would otherwise be redirected to the
+     *     login page for signed-out visitors
+     */
+    "/((?!api|login|forgot-password|set-password|_next/static|_next/image|.*\\.[\\w]+$).*)",
   ],
 };
