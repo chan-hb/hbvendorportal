@@ -23,20 +23,18 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         {/*
           White wordmark on pink, per the logo rules.
 
-          Drawn as a masked block rather than an inverted image. The artwork is
-          black with a transparent background, and a brightness/invert filter on
-          a transparent PNG renders inconsistently across browsers. A mask uses
-          the alpha channel to shape a solid white element, so the colour is
-          genuinely white and no image decoding is involved.
+          A separate white asset rather than recolouring the black one in the
+          browser. A brightness/invert filter and a CSS mask both failed here,
+          and neither is worth debugging for a decorative mark: a second PNG is
+          two kilobytes and works everywhere with no decoding tricks.
         */}
-        <span
-          role="img"
-          aria-label="Huda Beauty"
-          className="absolute bottom-10 right-12 block h-5 w-28 bg-white
-                     [mask-image:url('/hb-logo.png')] [mask-position:center]
-                     [mask-repeat:no-repeat] [mask-size:contain]
-                     [-webkit-mask-image:url('/hb-logo.png')] [-webkit-mask-position:center]
-                     [-webkit-mask-repeat:no-repeat] [-webkit-mask-size:contain]"
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hb-logo-white.png"
+          alt="Huda Beauty"
+          width={2048}
+          height={358}
+          className="absolute bottom-10 right-12 w-28"
         />
       </section>
 
