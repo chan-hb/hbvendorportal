@@ -160,7 +160,7 @@ export default async function RfqDetail({
 
       <div className="grid gap-6 lg:grid-cols-[3fr_1fr]">
         <div className="space-y-6">
-          <nav className="flex gap-6 border-b border-line">
+          <nav className="flex gap-2">
             <Tab href={`/rfq/${id}?tab=vendors`} label={`Vendors (${rfq.invitations.length})`} active={activeTab === "vendors"} />
             <Tab href={`/rfq/${id}?tab=compare`} label={`Comparison (${bids.length})`} active={activeTab === "compare"} />
             <Tab href={`/rfq/${id}?tab=activity`} label="Activity" active={activeTab === "activity"} />
@@ -347,9 +347,7 @@ function Tab({ href, label, active }: { href: string; label: string; active: boo
   return (
     <Link
       href={href}
-      className={`-mb-px border-b-2 pb-3 text-[11px] font-bold uppercase tracking-[0.12em] transition ${
-        active ? "border-pink text-pink" : "border-transparent text-charcoal/50 hover:text-charcoal"
-      }`}
+      className={active ? "tab-active" : "tab"}
     >
       {label}
     </Link>

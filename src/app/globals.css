@@ -42,12 +42,19 @@
   --cloud: #f0edea;
   --very-vanta: #1a1a1a;
   --hb-charcoal: #454041;
-  --line: #dfd9d4;
+  --line: #e9e2e6;
+  --blush: #fdf4f8;
 }
 
 html,
 body {
-  background: var(--cloud);
+  /*
+   * Pale pink wash, as on Pulse Atlas, rather than the beige Cloud. Flat at
+   * the top so the header reads cleanly, fading to white further down so long
+   * tables sit on something neutral.
+   */
+  background: linear-gradient(180deg, #fdf4f8 0%, #fdf4f8 220px, #ffffff 900px);
+  background-attachment: fixed;
   color: var(--hb-charcoal);
 }
 
@@ -76,7 +83,9 @@ body {
 
   /* White inner panels on the Cloud background. */
   .panel {
-    @apply border border-line bg-white;
+    /* overflow-hidden so table headers and footers are clipped by the rounded
+       corners rather than squaring them off. */
+    @apply overflow-hidden rounded-card border border-line bg-white;
   }
 
   .field-label {
@@ -84,9 +93,34 @@ body {
   }
 
   .input {
-    @apply w-full border border-line bg-white px-3.5 py-2.5 text-sm text-charcoal
+    @apply w-full rounded-field border border-line bg-white px-4 py-2.5 text-sm text-charcoal
            outline-none transition placeholder:text-charcoal/40
            focus:border-pink focus:ring-1 focus:ring-pink/25;
+  }
+
+  /* The prominent single search field: full pill, roomier than a form input. */
+  .input-search {
+    @apply w-full rounded-pill border border-line bg-white px-6 py-3.5 text-sm text-charcoal
+           shadow-[0_1px_2px_rgba(0,0,0,0.03)] outline-none transition
+           placeholder:text-charcoal/40 focus:border-pink focus:ring-1 focus:ring-pink/25;
+  }
+
+  /* Filter chips: pill outlines that fill with Power Pink when active. */
+  .chip {
+    @apply inline-flex items-center rounded-pill border border-line bg-white px-4 py-1.5
+           text-xs text-charcoal transition hover:border-charcoal/40;
+  }
+  .chip-active {
+    @apply chip border-pink bg-pink text-white hover:border-pink;
+  }
+
+  /* Tabs, matching the pill treatment on the Pulse Atlas navigation. */
+  .tab {
+    @apply rounded-pill px-4 py-1.5 font-headline text-[11px] font-bold uppercase
+           tracking-[0.12em] text-charcoal/60 transition hover:text-charcoal;
+  }
+  .tab-active {
+    @apply tab bg-pink text-white hover:text-white;
   }
 
   /* Capsule shapes, as the guidelines specify for brand labels. */

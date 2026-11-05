@@ -78,7 +78,7 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
 
       {/* Two sources of truth, kept apart on purpose: what has been asked for,
           and what Dynamics 365 currently holds. */}
-      <nav className="flex gap-6 border-b border-line">
+      <nav className="flex gap-2">
         <Tab href="/agreements" label="Portal requests" active={view === "requests"} />
         <Tab href="/agreements?view=current" label="Current in Dynamics 365" active={view === "current"} />
       </nav>
@@ -310,9 +310,7 @@ function Tab({ href, label, active }: { href: string; label: string; active: boo
   return (
     <Link
       href={href}
-      className={`-mb-px border-b-2 pb-3 text-[11px] font-bold uppercase tracking-[0.12em] transition ${
-        active ? "border-pink text-pink" : "border-transparent text-charcoal/50 hover:text-charcoal"
-      }`}
+      className={active ? "tab-active" : "tab"}
     >
       {label}
     </Link>

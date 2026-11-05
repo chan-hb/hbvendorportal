@@ -19,7 +19,10 @@ export default {
         vanta: "#1A1A1A",
         // HB Charcoal. Replaces black for body text and UI chrome.
         charcoal: "#454041",
-        line: "#DFD9D4",
+        line: "#E9E2E6",
+        // The pale pink wash Pulse Atlas uses in place of a neutral page
+        // background. Blush is the flat tone; the gradient is in globals.css.
+        blush: { DEFAULT: "#FDF4F8", 100: "#FBE8F1" },
       },
       fontFamily: {
         // Review is Huda Beauty's bespoke family. The fallback stack is the one
@@ -29,7 +32,12 @@ export default {
         headline: ['"Review Condensed"', '"Arial Black"', "Impact", "Arial", "sans-serif"],
         body: ['"Review"', "Arial", "Helvetica", "sans-serif"],
       },
-      borderRadius: { pill: "999px" },
+      borderRadius: {
+        pill: "999px",
+        // Matches the softer card and field corners on Pulse Atlas.
+        field: "14px",
+        card: "18px",
+      },
     },
   },
   plugins: [],
