@@ -90,8 +90,8 @@ export default async function RfqListPage({
                   <th className="th">Reference</th>
                   <th className="th">Title</th>
                   <th className="th">Item</th>
-                  <th className="th">Quantity</th>
-                  <th className="th">Required by</th>
+                  <th className="th">Launch</th>
+                  <th className="th">Full year</th>
                   <th className="th">Closes</th>
                   <th className="th">{internal ? "Quotes in" : "Your response"}</th>
                   <th className="th">Status</th>
@@ -116,9 +116,11 @@ export default async function RfqListPage({
                       ) : null}
                     </td>
                     <td className="td whitespace-nowrap">
-                      {Number(r.targetQuantity).toLocaleString()} {r.unit ?? ""}
+                      {Number(r.launchQuantity).toLocaleString()} {r.unit ?? ""}
                     </td>
-                    <td className="td whitespace-nowrap">{shortDate(r.requiredByDate)}</td>
+                    <td className="td whitespace-nowrap">
+                      {Number(r.fullYearQuantity).toLocaleString()} {r.unit ?? ""}
+                    </td>
                     <td className="td whitespace-nowrap">
                       {shortDate(r.closesAt)}
                       {r.status === "OPEN" && r.closesAt < new Date() ? (

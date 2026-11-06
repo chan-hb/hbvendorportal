@@ -42,7 +42,6 @@ export default async function NewRfqPage() {
           legalEntities={legalEntities.map((le) => ({ code: le.code, name: le.name, currency: le.currency }))}
           localItems={localItems}
           standardTiers={standardTiers}
-          defaultPaymentTerms={settings.defaultPaymentTerms}
           defaultIncoterm={settings.defaultIncoterm}
         />
       </Panel>

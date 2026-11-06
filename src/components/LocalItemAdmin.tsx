@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { SubmitButton } from "@/components/SubmitButton";
 import { createLocalItemAction, linkLocalItemAction } from "@/app/actions/rfq";
+import { DeleteLocalItem } from "@/components/DeleteControls";
 import type { ActionState } from "@/app/actions/agreements";
 
 type LocalItem = {
@@ -98,11 +99,12 @@ export function LocalItemAdmin({ items }: { items: LocalItem[] }) {
                 <th className="th">RFQs</th>
                 <th className="th">ERP item number</th>
                 <th className="th">Created</th>
+                <th className="th">Delete</th>
               </tr>
             </thead>
             <tbody>
               {items.length === 0 ? (
-                <tr><td className="td text-charcoal/60" colSpan={6}>Nothing created yet.</td></tr>
+                <tr><td className="td text-charcoal/60" colSpan={7}>Nothing created yet.</td></tr>
               ) : (
                 items.map((i) => (
                   <tr key={i.id} className="border-b border-line/60 align-top last:border-0">
@@ -139,6 +141,9 @@ export function LocalItemAdmin({ items }: { items: LocalItem[] }) {
                     <td className="td text-xs text-charcoal/60">
                       {i.createdByEmail}
                       <span className="block">{new Date(i.createdAt).toLocaleDateString("en-GB")}</span>
+                    </td>
+                    <td className="td">
+                      <DeleteLocalItem localItemId={i.id} localCode={i.localCode} rfqCount={i.rfqCount} />
                     </td>
                   </tr>
                 ))

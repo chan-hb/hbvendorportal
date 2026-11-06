@@ -67,7 +67,6 @@ export default async function RfqSettingsPage() {
             replyTo: settings.replyTo ?? "",
             ccEmails: settings.ccEmails.join(", "),
             standardTiers: tiers.join(", "),
-            defaultPaymentTerms: settings.defaultPaymentTerms ?? "",
             defaultIncoterm: settings.defaultIncoterm ?? "",
           }}
         />

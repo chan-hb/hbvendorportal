@@ -11,9 +11,9 @@ export function BidForm({
   rfqId,
   currency,
   unit,
-  targetQuantity,
+  launchQuantity,
+  fullYearQuantity,
   quantityTiers,
-  requestedPaymentTerms,
   requestedIncoterm,
   existing,
   readOnly,
@@ -21,9 +21,9 @@ export function BidForm({
   rfqId: string;
   currency: string;
   unit?: string | null;
-  targetQuantity: number;
+  launchQuantity: number;
+  fullYearQuantity: number;
   quantityTiers: number[];
-  requestedPaymentTerms?: string | null;
   requestedIncoterm?: string | null;
   existing?: {
     status: string;
@@ -32,8 +32,9 @@ export function BidForm({
     validUntil: string;
     leadTimeDays: string;
     weeklyCapacity: string;
+    samplingLeadTimeDays: string;
     moq: string;
-    paymentTerms: string;
+    paymentTermsDays: string;
     incoterm: string;
     tiers: { quantity: number; unitPrice: string; notes: string }[];
   };
@@ -46,7 +47,7 @@ export function BidForm({
   // Every requested break is shown as a row. Leaving one blank simply means it
   // is not offered, which is a legitimate answer.
   const [tiers, setTiers] = useState<Tier[]>(() => {
-    const asked = quantityTiers.length ? quantityTiers : [targetQuantity];
+    const asked = quantityTiers.length ? quantityTiers : [launchQuantity];
     const quoted = new Map(existing?.tiers.map((t) => [t.quantity, t]) ?? []);
     const rows = asked.map((q) => ({
       quantity: q,
@@ -65,20 +66,21 @@ export function BidForm({
 
   const summary = useMemo(() => {
     const priced = tiers.filter((t) => Number(t.unitPrice) > 0);
-    const atOrBelow = priced.filter((t) => t.quantity <= targetQuantity);
+    const atOrBelow = priced.filter((t) => t.quantity <= launchQuantity);
     const reference = atOrBelow.length ? atOrBelow[atOrBelow.length - 1] : priced[0];
     const capacity = Number(weeklyCapacity);
     const lead = Number(leadTimeDays);
-    const weeks = capacity > 0 ? targetQuantity / capacity : null;
+    const weeksForLaunch = capacity > 0 ? launchQuantity / capacity : null;
+    const weeksForYear = capacity > 0 ? fullYearQuantity / capacity : null;
     return {
       pricedCount: priced.length,
       referencePrice: reference ? Number(reference.unitPrice) : null,
       referenceTier: reference?.quantity ?? null,
-      orderValue: reference ? Number(reference.unitPrice) * targetQuantity : null,
-      weeks,
-      totalDays: weeks !== null && lead > 0 ? Math.ceil(lead + weeks * 7) : null,
+      daysToLaunch: weeksForLaunch !== null && lead > 0 ? Math.ceil(lead + weeksForLaunch * 7) : null,
+      weeksForYear: weeksForYear !== null ? Math.ceil(weeksForYear) : null,
+      yearWithinCapacity: weeksForYear !== null ? weeksForYear <= 52 : null,
     };
-  }, [tiers, targetQuantity, weeklyCapacity, leadTimeDays]);
+  }, [tiers, launchQuantity, fullYearQuantity, weeklyCapacity, leadTimeDays]);
 
   if (readOnly) {
     return (
@@ -123,7 +125,6 @@ export function BidForm({
                 <tr>
                   <th className="th">Quantity {unit ? `(${unit})` : ""}</th>
                   <th className="th">Unit price ({currency})</th>
-                  <th className="th">Order value</th>
                   <th className="th">Note</th>
                 </tr>
               </thead>
@@ -155,11 +156,6 @@ export function BidForm({
                         }
                       />
                     </td>
-                    <td className="td whitespace-nowrap text-sm text-charcoal/70">
-                      {Number(t.unitPrice) > 0
-                        ? `${currency} ${(Number(t.unitPrice) * t.quantity).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-                        : "-"}
-                    </td>
                     <td className="td">
                       <input
                         name="lineNotes"
@@ -180,12 +176,29 @@ export function BidForm({
         <section className="border-t border-line pt-5">
           <p className="eyebrow">Your production and terms</p>
           <p className="mt-1 text-xs text-charcoal/55">
-            Lead time and capacity carry real weight in how quotations are compared, so it is worth being accurate
-            rather than optimistic.
+            Lead time, capacity and minimum order all carry weight in how quotations are compared, so it is worth
+            being accurate rather than optimistic. Payment terms are recorded but not scored.
           </p>
           <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label className="field-label" htmlFor="leadTimeDays">Production lead time (days)</label>
+              <label className="field-label field-label-required" htmlFor="samplingLeadTimeDays">
+                Sampling lead time (days)
+              </label>
+              <input
+                id="samplingLeadTimeDays"
+                name="samplingLeadTimeDays"
+                type="number"
+                min="0"
+                max="365"
+                className="input"
+                required
+                defaultValue={existing?.samplingLeadTimeDays}
+                placeholder="14"
+              />
+              <p className="mt-1 text-xs text-charcoal/55">How long a first sample takes.</p>
+            </div>
+            <div>
+              <label className="field-label field-label-required" htmlFor="leadTimeDays">Production lead time (days)</label>
               <input
                 id="leadTimeDays"
                 name="leadTimeDays"
@@ -195,10 +208,11 @@ export function BidForm({
                 value={leadTimeDays}
                 onChange={(e) => setLeadTimeDays(e.target.value)}
                 placeholder="45"
+                required
               />
             </div>
             <div>
-              <label className="field-label" htmlFor="weeklyCapacity">Weekly capacity {unit ? `(${unit})` : ""}</label>
+              <label className="field-label field-label-required" htmlFor="weeklyCapacity">Weekly capacity {unit ? `(${unit})` : ""}</label>
               <input
                 id="weeklyCapacity"
                 name="weeklyCapacity"
@@ -209,11 +223,12 @@ export function BidForm({
                 value={weeklyCapacity}
                 onChange={(e) => setWeeklyCapacity(e.target.value)}
                 placeholder="20000"
+                required
               />
             </div>
             <div>
-              <label className="field-label" htmlFor="moq">Minimum order quantity</label>
-              <input id="moq" name="moq" type="number" step="0.0001" min="0" className="input" defaultValue={existing?.moq} />
+              <label className="field-label field-label-required" htmlFor="moq">Minimum order quantity</label>
+              <input id="moq" name="moq" type="number" step="0.0001" min="0" className="input" required defaultValue={existing?.moq} />
             </div>
             <div>
               <label className="field-label" htmlFor="incoterm">Incoterm</label>
@@ -224,18 +239,24 @@ export function BidForm({
                 defaultValue={existing?.incoterm ?? requestedIncoterm ?? ""}
               />
             </div>
-            <div className="sm:col-span-2">
-              <label className="field-label" htmlFor="paymentTerms">Payment terms</label>
+            <div>
+              <label className="field-label field-label-required" htmlFor="paymentTermsDays">
+                Payment terms (days)
+              </label>
               <input
-                id="paymentTerms"
-                name="paymentTerms"
+                id="paymentTermsDays"
+                name="paymentTermsDays"
+                type="number"
+                min="0"
+                max="365"
                 className="input"
-                defaultValue={existing?.paymentTerms ?? ""}
-                placeholder={requestedPaymentTerms ? `We asked for: ${requestedPaymentTerms}` : "60 days from invoice"}
+                required
+                defaultValue={existing?.paymentTermsDays}
+                placeholder="60"
               />
-              {requestedPaymentTerms ? (
-                <p className="mt-1 text-xs text-charcoal/55">Huda Beauty asked for {requestedPaymentTerms}.</p>
-              ) : null}
+              <p className="mt-1 text-xs text-charcoal/55">
+                Days from invoice, for example 45, 60 or 90.
+              </p>
             </div>
             <div>
               <label className="field-label" htmlFor="quotationDate">Quotation date</label>
@@ -261,15 +282,23 @@ export function BidForm({
             value={summary.referencePrice ? `${currency} ${summary.referencePrice.toFixed(4)}` : "-"}
           />
           <Stat
-            label={`Value at ${targetQuantity.toLocaleString()}`}
-            value={summary.orderValue ? `${currency} ${summary.orderValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "-"}
+            label={`Time to supply ${launchQuantity.toLocaleString()}`}
+            value={summary.daysToLaunch ? `About ${summary.daysToLaunch} days` : "Needs lead time and capacity"}
+            warn={!summary.daysToLaunch}
           />
           <Stat
-            label="Time to full quantity"
-            value={summary.totalDays ? `About ${summary.totalDays} days` : "Needs lead time and capacity"}
-            warn={!summary.totalDays}
+            label={`Production for ${fullYearQuantity.toLocaleString()}`}
+            value={summary.weeksForYear ? `${summary.weeksForYear} weeks` : "Needs capacity"}
+            warn={summary.yearWithinCapacity === false}
           />
         </div>
+
+        {summary.yearWithinCapacity === false ? (
+          <p className="alert-note">
+            At the capacity you have entered, the full year volume would take more than a year to produce. That is
+            worth a note below if you would plan to add capacity.
+          </p>
+        ) : null}
 
         <div>
           <label className="field-label" htmlFor="notes">Notes for the buyer</label>

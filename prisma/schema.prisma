@@ -396,8 +396,7 @@ model RfqSetting {
   // Offered as tick boxes when raising an RFQ.
   standardTiers Decimal[] @db.Decimal(18, 4)
 
-  defaultPaymentTerms String?
-  defaultIncoterm     String?
+  defaultIncoterm String?
 
   updatedAt DateTime @updatedAt
   updatedBy String?
@@ -522,29 +521,33 @@ model Rfq {
   localItemId String?
   localItem   LocalItem? @relation(fields: [localItemId], references: [id])
 
-  targetQuantity Decimal   @db.Decimal(18, 4)
-  unit           String?
+  // Purchasing enters both. Launch is the volume being committed to now; full
+  // year is what the relationship is worth, which is what a supplier needs in
+  // order to judge whether they can service it.
+  launchQuantity  Decimal @db.Decimal(18, 4)
+  fullYearQuantity Decimal @db.Decimal(18, 4)
+  unit            String?
 
   // Tiers the buyer wants priced, e.g. [5000, 10000, 25000]. Suppliers return
   // a price against each, which is how volume pricing is actually negotiated.
   quantityTiers Decimal[] @db.Decimal(18, 4)
 
-  // Optional target for when the goods are needed. Kept for context only:
-  // timing is now assessed from lead time and capacity, not delivery dates.
-  requiredByDate DateTime?
+  // When the supplier must have the goods finished and ready. Context for the
+  // supplier rather than a scored field.
+  goodsReadyDate DateTime?
   closesAt       DateTime
   notes          String?
 
-  // Terms the buyer is asking for. A supplier can counter in their quotation.
-  requestedPaymentTerms String?
-  requestedIncoterm     String?
+  // Incoterm the buyer is asking for. Payment terms are deliberately not here:
+  // they are a supplier answer, captured on the quotation.
+  requestedIncoterm String?
 
   // Scoring weights, per RFQ so a buyer can favour speed over price when it
   // matters. Stored as basis points of 1.0 to avoid float drift.
-  weightPrice       Int @default(45)
-  weightLeadTime    Int @default(25)
-  weightCapacity    Int @default(20)
-  weightReliability Int @default(10)
+  weightPrice    Int @default(25)
+  weightLeadTime Int @default(25)
+  weightCapacity Int @default(25)
+  weightMoq      Int @default(25)
 
   createdById String
   createdBy   User   @relation("RfqCreatedBy", fields: [createdById], references: [id])
@@ -649,11 +652,16 @@ model Bid {
   validUntil    DateTime?
 
   // Commercial and capacity terms the supplier is offering.
-  leadTimeDays   Int?
+  // Sampling is how long a first sample takes, which gates approval long
+  // before production starts. Captured and shown, deliberately not scored.
+  samplingLeadTimeDays Int?
+  leadTimeDays         Int?
   weeklyCapacity Decimal? @db.Decimal(18, 4)
   moq            Decimal? @db.Decimal(18, 4)
-  paymentTerms   String?
-  incoterm       String?
+  // Days from invoice. A number rather than free text, so quotations can be
+  // compared and the figure can be read by anything downstream.
+  paymentTermsDays Int?
+  incoterm         String?
 
   submittedById String?
   submittedBy   User?     @relation("BidSubmittedBy", fields: [submittedById], references: [id])

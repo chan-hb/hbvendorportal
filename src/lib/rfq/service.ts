@@ -2,7 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isInternal } from "@/lib/rbac";
 import type { Actor } from "@/lib/agreements";
-import { computeMetrics, scoreBids, type BidWithLines, type VendorHistory } from "./scoring";
+import { computeMetrics, scoreBids, type BidWithLines } from "./scoring";
 import { notifyAllBidsIn, notifyVendorInvited } from "./notifications";
 
 // ---------------------------------------------------------------- references
@@ -83,18 +83,18 @@ export type RfqInput = {
   itemSource: "ERP" | "LOCAL";
   itemNumber?: string;
   localItemId?: string;
-  targetQuantity: number;
+  launchQuantity: number;
+  fullYearQuantity: number;
   unit?: string;
   quantityTiers: number[];
-  requiredByDate?: Date | null;
+  goodsReadyDate?: Date | null;
   closesAt: Date;
   notes?: string;
-  requestedPaymentTerms?: string;
   requestedIncoterm?: string;
   weightPrice: number;
   weightLeadTime: number;
   weightCapacity: number;
-  weightReliability: number;
+  weightMoq: number;
 };
 
 export async function createRfq(actor: Actor, input: RfqInput) {
@@ -117,18 +117,18 @@ export async function createRfq(actor: Actor, input: RfqInput) {
       itemSource: input.itemSource,
       itemNumber: input.itemSource === "ERP" ? input.itemNumber : null,
       localItemId: input.itemSource === "LOCAL" ? input.localItemId : null,
-      targetQuantity: input.targetQuantity,
+      launchQuantity: input.launchQuantity,
+      fullYearQuantity: input.fullYearQuantity,
       unit: input.unit,
       quantityTiers: input.quantityTiers,
-      requiredByDate: input.requiredByDate ?? null,
+      goodsReadyDate: input.goodsReadyDate ?? null,
       closesAt: input.closesAt,
       notes: input.notes,
-      requestedPaymentTerms: input.requestedPaymentTerms,
       requestedIncoterm: input.requestedIncoterm,
       weightPrice: input.weightPrice,
       weightLeadTime: input.weightLeadTime,
       weightCapacity: input.weightCapacity,
-      weightReliability: input.weightReliability,
+      weightMoq: input.weightMoq,
       createdById: actor.id,
       events: { create: { type: "CREATED", actorEmail: actor.email, detail: input.title } },
     },
@@ -182,10 +182,11 @@ export type BidLineInput = { quantity: number; unitPrice: number; notes?: string
 export type BidTermsInput = {
   quotationDate?: Date | null;
   validUntil?: Date | null;
+  samplingLeadTimeDays?: number | null;
   leadTimeDays?: number | null;
   weeklyCapacity?: number | null;
   moq?: number | null;
-  paymentTerms?: string;
+  paymentTermsDays?: number | null;
   incoterm?: string;
   notes?: string;
 };
@@ -216,10 +217,11 @@ export async function submitBid(
 
   const metrics = computeMetrics(
     {
+      samplingLeadTimeDays: terms.samplingLeadTimeDays ?? null,
       leadTimeDays: terms.leadTimeDays ?? null,
       weeklyCapacity: (terms.weeklyCapacity ?? null) as never,
       moq: (terms.moq ?? null) as never,
-      paymentTerms: terms.paymentTerms ?? null,
+      paymentTermsDays: terms.paymentTermsDays ?? null,
     },
     lines.map((l) => ({ quantity: l.quantity as never, unitPrice: l.unitPrice as never })),
     rfq,
@@ -235,10 +237,11 @@ export async function submitBid(
     notes: terms.notes,
     quotationDate: terms.quotationDate ?? new Date(),
     validUntil: terms.validUntil ?? null,
+    samplingLeadTimeDays: terms.samplingLeadTimeDays ?? null,
     leadTimeDays: terms.leadTimeDays ?? null,
     weeklyCapacity: terms.weeklyCapacity ?? null,
     moq: terms.moq ?? null,
-    paymentTerms: terms.paymentTerms,
+    paymentTermsDays: terms.paymentTermsDays ?? null,
     incoterm: terms.incoterm,
     submittedById: actor.id,
     submittedAt: asDraft ? null : new Date(),
@@ -299,23 +302,6 @@ export async function markInvitationViewed(rfqId: string, vendorId: string) {
 
 // ---------------------------------------------------------------- comparison
 
-/** Win and participation counts per vendor, excluding the RFQ being scored. */
-export async function vendorHistories(excludeRfqId: string): Promise<Map<string, VendorHistory>> {
-  const bids = await prisma.bid.findMany({
-    where: { status: "SUBMITTED", rfqId: { not: excludeRfqId }, rfq: { status: "AWARDED" } },
-    select: { vendorId: true, id: true, rfq: { select: { awardedBidId: true } } },
-  });
-
-  const map = new Map<string, VendorHistory>();
-  for (const b of bids) {
-    const entry = map.get(b.vendorId) ?? { participated: 0, won: 0 };
-    entry.participated += 1;
-    if (b.rfq.awardedBidId === b.id) entry.won += 1;
-    map.set(b.vendorId, entry);
-  }
-  return map;
-}
-
 export async function compareRfq(rfqId: string) {
   const rfq = await prisma.rfq.findUniqueOrThrow({
     where: { id: rfqId },
@@ -327,8 +313,7 @@ export async function compareRfq(rfqId: string) {
     include: { lines: { orderBy: { quantity: "asc" } }, vendor: { select: { id: true, name: true, code: true } } },
   })) as BidWithLines[];
 
-  const history = await vendorHistories(rfqId);
-  return { rfq, bids, scores: scoreBids(rfq, bids, history) };
+  return { rfq, bids, scores: scoreBids(rfq, bids) };
 }
 
 export async function awardRfq(actor: Actor, rfqId: string, bidId: string, reason?: string) {
@@ -552,4 +537,159 @@ export async function getRfqSettings() {
   return prisma.rfqSetting.create({
     data: { id: RFQ_SETTINGS_ID, standardTiers: DEFAULT_TIERS },
   });
+}
+
+// ---------------------------------------------------------------- deletion
+
+/**
+ * Administrator deletion.
+ *
+ * Hard deletes, not soft ones: the point is to clear out test data and
+ * mistakes, and a soft delete that still shows in counts does not do that.
+ *
+ * What is refused matters more than what is allowed. Anything that has left
+ * the building, a price already created in D365 or an award a supplier has
+ * been told about, cannot be unmade here, so deleting the record would leave
+ * the portal disagreeing with reality.
+ */
+
+export type DeleteCheck = { allowed: boolean; reason?: string };
+
+export async function canDeleteRfq(id: string): Promise<DeleteCheck> {
+  const rfq = await prisma.rfq.findUnique({
+    where: { id },
+    select: { status: true, awardedBidId: true, reference: true },
+  });
+  if (!rfq) return { allowed: false, reason: "Not found" };
+
+  if (rfq.status === "AWARDED" || rfq.awardedBidId) {
+    return {
+      allowed: false,
+      reason:
+        "This RFQ has been awarded and every bidder has been emailed the outcome. Deleting it would remove the record of a decision suppliers have already been told about.",
+    };
+  }
+  return { allowed: true };
+}
+
+export async function deleteRfq(actor: Actor, id: string) {
+  if (!isInternal(actor.role)) throw new Error("Not permitted");
+
+  const check = await canDeleteRfq(id);
+  if (!check.allowed) throw new Error(check.reason ?? "Cannot be deleted");
+
+  // Invitations, bids, bid lines, attachments and events all cascade.
+  const rfq = await prisma.rfq.delete({ where: { id }, select: { reference: true } });
+  return rfq.reference;
+}
+
+export async function canDeleteLocalItem(id: string): Promise<DeleteCheck> {
+  const item = await prisma.localItem.findUnique({
+    where: { id },
+    select: { localCode: true, _count: { select: { rfqs: true } } },
+  });
+  if (!item) return { allowed: false, reason: "Not found" };
+
+  if (item._count.rfqs > 0) {
+    return {
+      allowed: false,
+      reason: `${item.localCode} is used by ${item._count.rfqs} RFQ${
+        item._count.rfqs === 1 ? "" : "s"
+      }. Delete those first, or leave this in place.`,
+    };
+  }
+  return { allowed: true };
+}
+
+export async function deleteLocalItem(actor: Actor, id: string) {
+  if (!isInternal(actor.role)) throw new Error("Not permitted");
+
+  const check = await canDeleteLocalItem(id);
+  if (!check.allowed) throw new Error(check.reason ?? "Cannot be deleted");
+
+  const item = await prisma.localItem.delete({ where: { id }, select: { localCode: true } });
+  return item.localCode;
+}
+
+export async function canDeleteAgreement(id: string): Promise<DeleteCheck> {
+  const agreement = await prisma.agreement.findUnique({
+    where: { id },
+    select: { reference: true, erpCreated: true, erpRecordId: true },
+  });
+  if (!agreement) return { allowed: false, reason: "Not found" };
+
+  if (agreement.erpCreated) {
+    return {
+      allowed: false,
+      reason: `${agreement.reference} has been created in Dynamics 365${
+        agreement.erpRecordId ? ` as ${agreement.erpRecordId}` : ""
+      }. Deleting it here would not remove the price from the ERP, and the two would then disagree.`,
+    };
+  }
+  return { allowed: true };
+}
+
+export async function deleteAgreement(actor: Actor, id: string) {
+  if (!isInternal(actor.role)) throw new Error("Not permitted");
+
+  const check = await canDeleteAgreement(id);
+  if (!check.allowed) throw new Error(check.reason ?? "Cannot be deleted");
+
+  // History cascades with the agreement.
+  const agreement = await prisma.agreement.delete({ where: { id }, select: { reference: true } });
+  return agreement.reference;
+}
+
+/**
+ * Users are different. Deactivating stops somebody signing in while leaving
+ * their name on what they did, which is what an audit trail needs. Deletion is
+ * only offered for accounts that never did anything, because removing an
+ * approver would orphan the agreements they approved.
+ */
+export async function canDeleteUser(id: string): Promise<DeleteCheck> {
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      email: true,
+      _count: {
+        select: {
+          createdAgs: true,
+          rfqsCreated: true,
+          localItems: true,
+          bidsSubmitted: true,
+          historyEntries: true,
+        },
+      },
+    },
+  });
+  if (!user) return { allowed: false, reason: "Not found" };
+
+  const total =
+    user._count.createdAgs +
+    user._count.rfqsCreated +
+    user._count.localItems +
+    user._count.bidsSubmitted +
+    user._count.historyEntries;
+
+  if (total > 0) {
+    return {
+      allowed: false,
+      reason: `${user.email} appears on ${total} record${
+        total === 1 ? "" : "s"
+      }. Deactivate them instead: that blocks sign-in and keeps the history intact.`,
+    };
+  }
+  return { allowed: true };
+}
+
+export async function deleteUser(actor: Actor, id: string) {
+  if (actor.role !== "HB_ADMIN") throw new Error("Not permitted");
+  if (actor.id === id) throw new Error("You cannot delete your own account");
+
+  const check = await canDeleteUser(id);
+  if (!check.allowed) throw new Error(check.reason ?? "Cannot be deleted");
+
+  // Sessions, accounts and password tokens cascade.
+  const user = await prisma.user.delete({ where: { id }, select: { email: true } });
+  return user.email;
 }

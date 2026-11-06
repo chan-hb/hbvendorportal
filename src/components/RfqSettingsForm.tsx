@@ -15,7 +15,6 @@ export function RfqSettingsForm({
     replyTo: string;
     ccEmails: string;
     standardTiers: string;
-    defaultPaymentTerms: string;
     defaultIncoterm: string;
   };
   fallbackFrom: string;
@@ -64,17 +63,13 @@ export function RfqSettingsForm({
 
       <div className="border-t border-line pt-5">
         <p className="eyebrow">Defaults when raising an RFQ</p>
-        <div className="mt-4 grid gap-5 md:grid-cols-3">
-          <div className="md:col-span-3">
+        <div className="mt-4 grid gap-5 md:grid-cols-2">
+          <div className="md:col-span-2">
             <label className="field-label" htmlFor="standardTiers">Standard quantity breaks</label>
             <input id="standardTiers" name="standardTiers" className="input" defaultValue={values.standardTiers} />
             <p className="mt-1 text-xs text-charcoal/55">
               Comma separated. Offered as tick boxes when raising an RFQ, where a buyer can still add a one-off.
             </p>
-          </div>
-          <div>
-            <label className="field-label" htmlFor="defaultPaymentTerms">Payment terms</label>
-            <input id="defaultPaymentTerms" name="defaultPaymentTerms" className="input" defaultValue={values.defaultPaymentTerms} placeholder="60 days from invoice" />
           </div>
           <div>
             <label className="field-label" htmlFor="defaultIncoterm">Incoterm</label>

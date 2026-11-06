@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-import { canApprove, isInternal } from "@/lib/rbac";
+import { canAdminister, canApprove, isInternal } from "@/lib/rbac";
 import { getAgreement } from "@/lib/agreements";
 import { currentPriceFor } from "@/lib/d365/sync-trade-agreements";
 import { dateTime, money, shortDate } from "@/lib/format";
@@ -10,6 +10,7 @@ import { ErpBadge, StatusBadge } from "@/components/StatusBadge";
 import { Panel } from "@/components/Panel";
 import { DecisionPanel } from "@/components/DecisionPanel";
 import { HistoryTimeline } from "@/components/HistoryTimeline";
+import { DeleteAgreement } from "@/components/DeleteControls";
 import { AgreementForm } from "@/components/AgreementForm";
 import { resubmitAction } from "@/app/actions/agreements";
 
@@ -135,6 +136,17 @@ export default async function AgreementDetail({ params }: { params: Promise<{ id
               </p>
             ) : null}
           </Panel>
+
+          {canAdminister(user.role) ? (
+            <Panel title="Delete this agreement">
+              <DeleteAgreement
+                agreementId={agreement.id}
+                reference={agreement.reference}
+                erpCreated={agreement.erpCreated}
+                erpRecordId={agreement.erpRecordId}
+              />
+            </Panel>
+          ) : null}
 
           <Panel
             title="History"

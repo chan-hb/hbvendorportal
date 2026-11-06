@@ -88,6 +88,13 @@ body {
     @apply overflow-hidden rounded-card border border-line bg-white;
   }
 
+  /* Mandatory fields carry a pink asterisk, so what blocks the form is
+     visible before you try to submit it. */
+  .field-label-required::after {
+    content: " *";
+    @apply text-pink;
+  }
+
   .field-label {
     @apply mb-1.5 block font-headline text-[11px] font-bold uppercase tracking-[0.14em] text-charcoal/70;
   }

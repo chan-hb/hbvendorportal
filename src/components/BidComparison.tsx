@@ -16,14 +16,18 @@ type Score = {
   metrics: {
     referencePrice: number;
     referenceTier: number | null;
+    fullYearPrice: number | null;
+    fullYearTier: number | null;
     tiers: { quantity: number; unitPrice: number }[];
+    samplingLeadTimeDays: number | null;
     leadTimeDays: number | null;
     weeklyCapacity: number | null;
-    weeksToProduce: number | null;
-    totalDaysToFull: number | null;
+    daysToLaunch: number | null;
+    weeksForFullYear: number | null;
+    coversFullYear: boolean | null;
     moq: number | null;
-    moqAboveTarget: boolean;
-    paymentTerms: string | null;
+    moqAboveLaunch: boolean;
+    paymentTermsDays: number | null;
   };
 };
 
@@ -40,7 +44,8 @@ export function BidComparison({
   rfqId,
   currency,
   unit,
-  targetQuantity,
+  launchQuantity,
+  fullYearQuantity,
   scores,
   bids,
   recommendation,
@@ -50,7 +55,8 @@ export function BidComparison({
   rfqId: string;
   currency: string;
   unit?: string | null;
-  targetQuantity: number;
+  launchQuantity: number;
+  fullYearQuantity: number;
   scores: Score[];
   bids: BidRow[];
   recommendation: string;
@@ -150,11 +156,14 @@ export function BidComparison({
                 <th className="th">Rank</th>
                 <th className="th">Vendor</th>
                 <th className="th">Score</th>
-                <th className="th">Compared price</th>
-                <th className="th">Value at {targetQuantity.toLocaleString()}</th>
+                <th className="th">Price at {launchQuantity.toLocaleString()}</th>
+                <th className="th">Value at launch</th>
+                <th className="th">Price at {fullYearQuantity.toLocaleString()}</th>
+                <th className="th">Sampling</th>
                 <th className="th">Lead time</th>
                 <th className="th">Weekly capacity</th>
-                <th className="th">Time to full</th>
+                <th className="th">Time to launch</th>
+                <th className="th">Full year</th>
                 <th className="th">MOQ</th>
                 <th className="th">Payment terms</th>
                 <th className="th"></th>
@@ -193,8 +202,21 @@ export function BidComparison({
                     </td>
                     <td className="td whitespace-nowrap">
                       {s.metrics.referencePrice
-                        ? `${currency} ${(s.metrics.referencePrice * targetQuantity).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                        ? `${currency} ${(s.metrics.referencePrice * launchQuantity).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
                         : "-"}
+                    </td>
+                    <td className="td whitespace-nowrap">
+                      {s.metrics.fullYearPrice ? `${currency} ${s.metrics.fullYearPrice.toFixed(4)}` : "-"}
+                      {s.metrics.fullYearTier ? (
+                        <span className="block text-xs text-charcoal/55">
+                          at {s.metrics.fullYearTier.toLocaleString()}
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="td whitespace-nowrap">
+                      {s.metrics.samplingLeadTimeDays !== null
+                        ? `${s.metrics.samplingLeadTimeDays} days`
+                        : <span className="text-charcoal/40">Not stated</span>}
                     </td>
                     <td className="td whitespace-nowrap">
                       {s.metrics.leadTimeDays !== null ? `${s.metrics.leadTimeDays} days` : <span className="text-nude">Not stated</span>}
@@ -205,14 +227,25 @@ export function BidComparison({
                         : <span className="text-nude">Not stated</span>}
                     </td>
                     <td className="td whitespace-nowrap">
-                      {s.metrics.totalDaysToFull !== null ? `${Math.ceil(s.metrics.totalDaysToFull)} days` : "-"}
+                      {s.metrics.daysToLaunch !== null ? `${Math.ceil(s.metrics.daysToLaunch)} days` : "-"}
                     </td>
                     <td className="td whitespace-nowrap">
-                      <span className={s.metrics.moqAboveTarget ? "text-nude" : ""}>
+                      {s.metrics.weeksForFullYear !== null ? (
+                        <span className={s.metrics.coversFullYear === false ? "text-nude" : ""}>
+                          {Math.ceil(s.metrics.weeksForFullYear)} weeks
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="td whitespace-nowrap">
+                      <span className={s.metrics.moqAboveLaunch ? "text-nude" : ""}>
                         {s.metrics.moq !== null ? s.metrics.moq.toLocaleString() : "-"}
                       </span>
                     </td>
-                    <td className="td text-sm">{s.metrics.paymentTerms ?? "-"}</td>
+                    <td className="td text-sm">
+                      {s.metrics.paymentTermsDays !== null ? `${s.metrics.paymentTermsDays} days` : "-"}
+                    </td>
                     <td className="td">
                       <button
                         type="button"
@@ -226,7 +259,7 @@ export function BidComparison({
 
                   {expanded === s.bidId ? (
                     <tr key={`${s.bidId}-detail`} className="border-b border-line/60 bg-cloud/40">
-                      <td className="td" colSpan={11}>
+                      <td className="td" colSpan={14}>
                         <p className="field-label">How the score was reached</p>
                         <table className="w-full max-w-2xl border-collapse text-sm">
                           <tbody>

@@ -12,14 +12,12 @@ export function RfqForm({
   legalEntities,
   localItems,
   standardTiers,
-  defaultPaymentTerms,
   defaultIncoterm,
 }: {
   action: (state: ActionState, formData: FormData) => Promise<ActionState>;
   legalEntities: { code: string; name: string; currency: string | null }[];
   localItems: LocalItem[];
   standardTiers: number[];
-  defaultPaymentTerms?: string | null;
   defaultIncoterm?: string | null;
 }) {
   const [state, formAction] = useActionState(action, null);
@@ -28,9 +26,10 @@ export function RfqForm({
   const [options, setOptions] = useState<ItemOption[]>([]);
   const [tiers, setTiers] = useState<number[]>(standardTiers.slice(0, 4));
   const [customTier, setCustomTier] = useState("");
-  const [weights, setWeights] = useState({ price: 45, leadTime: 25, capacity: 20, reliability: 10 });
+  // Equal by default. A criterion that does not matter on this RFQ goes to zero.
+  const [weights, setWeights] = useState({ price: 25, leadTime: 25, capacity: 25, moq: 25 });
 
-  const total = weights.price + weights.leadTime + weights.capacity + weights.reliability;
+  const total = weights.price + weights.leadTime + weights.capacity + weights.moq;
   const allTiers = Array.from(new Set([...standardTiers, ...tiers])).sort((a, b) => a - b);
 
   useEffect(() => {
@@ -51,22 +50,24 @@ export function RfqForm({
 
   return (
     <form action={formAction} className="space-y-6 p-6">
-      {state?.error ? (
-        <p className="alert-error">{state.error}</p>
-      ) : null}
+      {state?.error ? <p className="alert-error">{state.error}</p> : null}
+
+      <p className="text-xs text-charcoal/55">
+        Fields marked <span className="text-pink">*</span> are required.
+      </p>
 
       <div>
-        <label className="field-label" htmlFor="title">Title</label>
+        <label className="field-label field-label-required" htmlFor="title">Title</label>
         <input id="title" name="title" className="input" required placeholder="Compact powder outer carton, Q4 launch" />
       </div>
 
       <fieldset>
-        <legend className="field-label">What are you sourcing?</legend>
+        <legend className="field-label field-label-required">What are you sourcing?</legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {([["ERP", "An item in Dynamics 365"], ["LOCAL", "An item not in the ERP yet"]] as const).map(([v, label]) => (
             <label
               key={v}
-              className={`cursor-pointer border px-3 py-2 text-center text-[11px] font-bold uppercase tracking-[0.12em] transition ${
+              className={`cursor-pointer rounded-pill border px-4 py-2 text-center font-headline text-[11px] font-bold uppercase tracking-[0.12em] transition ${
                 itemSource === v ? "border-pink bg-pink text-white" : "border-line bg-white text-charcoal/70"
               }`}
             >
@@ -80,7 +81,7 @@ export function RfqForm({
 
       {itemSource === "ERP" ? (
         <div>
-          <label className="field-label" htmlFor="itemNumber">Item</label>
+          <label className="field-label field-label-required" htmlFor="itemNumber">Item</label>
           <input
             id="itemNumber"
             name="itemNumber"
@@ -89,14 +90,15 @@ export function RfqForm({
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Start typing an item number or name"
             autoComplete="off"
+            required
           />
           {options.length > 0 ? (
-            <ul className="mt-1 max-h-44 overflow-y-auto border border-line bg-white text-sm">
+            <ul className="mt-1 max-h-44 overflow-y-auto rounded-field border border-line bg-white text-sm">
               {options.map((o) => (
                 <li key={o.itemNumber}>
                   <button
                     type="button"
-                    className="block w-full px-3 py-2 text-left hover:bg-cloud"
+                    className="block w-full px-3 py-2 text-left hover:bg-blush"
                     onClick={() => { setQuery(o.itemNumber); setOptions([]); }}
                   >
                     <span className="font-medium">{o.itemNumber}</span>
@@ -109,11 +111,9 @@ export function RfqForm({
         </div>
       ) : (
         <div>
-          <label className="field-label" htmlFor="localItemId">Local item</label>
+          <label className="field-label field-label-required" htmlFor="localItemId">Local item</label>
           {localItems.length === 0 ? (
-            <p className="alert-note">
-              Nothing created yet. Create one on the New items page first.
-            </p>
+            <p className="alert-note">Nothing created yet. Create one on the New items page first.</p>
           ) : (
             <select id="localItemId" name="localItemId" className="input" required>
               {localItems.map((l) => (
@@ -126,29 +126,40 @@ export function RfqForm({
         </div>
       )}
 
-      {/* Quantity breaks. This is what suppliers price against. */}
+      {/* Both volumes. Launch drives the compared price, and the pair together
+          drive the capacity score. */}
+      <div className="grid gap-5 md:grid-cols-2">
+        <div>
+          <label className="field-label field-label-required" htmlFor="launchQuantity">Launch quantity</label>
+          <input id="launchQuantity" name="launchQuantity" type="number" step="0.0001" min="0" className="input" required />
+          <p className="mt-1 text-xs text-charcoal/55">
+            The first order. Suppliers are compared on their price at this volume.
+          </p>
+        </div>
+        <div>
+          <label className="field-label field-label-required" htmlFor="fullYearQuantity">Full year quantity</label>
+          <input id="fullYearQuantity" name="fullYearQuantity" type="number" step="0.0001" min="0" className="input" required />
+          <p className="mt-1 text-xs text-charcoal/55">
+            What the year is worth. Used to check a supplier could actually sustain it.
+          </p>
+        </div>
+      </div>
+
       <fieldset className="border-t border-line pt-5">
-        <legend className="eyebrow">Quantity breaks to be priced</legend>
+        <legend className="eyebrow">Quantity breaks to be priced *</legend>
         <p className="mt-1 text-xs text-charcoal/55">
           Suppliers return a price against each. Ask for the volumes you might realistically order, since every
           extra break is more work for them and more to compare.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {allTiers.map((t) => (
-            <label
-              key={t}
-              className={`cursor-pointer border px-4 py-2 text-sm transition ${
-                tiers.includes(t) ? "border-pink bg-pink text-white" : "border-line bg-white text-charcoal/70"
-              }`}
-            >
+            <label key={t} className={tiers.includes(t) ? "chip-active cursor-pointer" : "chip cursor-pointer"}>
               <input type="checkbox" className="sr-only" checked={tiers.includes(t)} onChange={() => toggleTier(t)} />
               {t.toLocaleString()}
             </label>
           ))}
         </div>
-        {tiers.map((t) => (
-          <input key={t} type="hidden" name="quantityTiers" value={t} />
-        ))}
+        {tiers.map((t) => <input key={t} type="hidden" name="quantityTiers" value={t} />)}
 
         <div className="mt-3 flex flex-wrap items-end gap-2">
           <div>
@@ -175,15 +186,13 @@ export function RfqForm({
           >
             Add
           </button>
-          {tiers.length === 0 ? (
-            <p className="pb-2 text-xs text-[#A32B2B]">Choose at least one</p>
-          ) : null}
+          {tiers.length === 0 ? <p className="pb-2 text-xs text-[#A32B2B]">Choose at least one</p> : null}
         </div>
       </fieldset>
 
       <div className="grid gap-5 md:grid-cols-2">
         <div>
-          <label className="field-label" htmlFor="dataAreaId">Legal entity</label>
+          <label className="field-label field-label-required" htmlFor="dataAreaId">Legal entity</label>
           <select id="dataAreaId" name="dataAreaId" className="input" required>
             {legalEntities.map((le) => (
               <option key={le.code} value={le.code}>{le.code.toUpperCase()} . {le.name}</option>
@@ -191,7 +200,7 @@ export function RfqForm({
           </select>
         </div>
         <div>
-          <label className="field-label" htmlFor="currency">Currency</label>
+          <label className="field-label field-label-required" htmlFor="currency">Currency</label>
           <select id="currency" name="currency" className="input" required>
             {Array.from(new Set([...legalEntities.map((l) => l.currency).filter(Boolean) as string[], "USD", "AED", "EUR", "GBP"])).map(
               (c) => <option key={c} value={c}>{c}</option>,
@@ -199,42 +208,23 @@ export function RfqForm({
           </select>
         </div>
         <div>
-          <label className="field-label" htmlFor="targetQuantity">Quantity you expect to order</label>
-          <input id="targetQuantity" name="targetQuantity" type="number" step="0.0001" min="0" className="input" required />
-          <p className="mt-1 text-xs text-charcoal/55">Used to pick which price break each supplier is compared on.</p>
-        </div>
-        <div>
           <label className="field-label" htmlFor="unit">Unit</label>
           <input id="unit" name="unit" className="input" placeholder="PCS" />
         </div>
         <div>
-          <label className="field-label" htmlFor="closesAt">Quotations close</label>
+          <label className="field-label field-label-required" htmlFor="closesAt">Quotations close</label>
           <input id="closesAt" name="closesAt" type="date" className="input" required />
         </div>
         <div>
-          <label className="field-label" htmlFor="requiredByDate">Target in market date (optional)</label>
-          <input id="requiredByDate" name="requiredByDate" type="date" className="input" />
-          <p className="mt-1 text-xs text-charcoal/55">Context only. Timing is judged on lead time and capacity.</p>
-        </div>
-        <div>
-          <label className="field-label" htmlFor="requestedPaymentTerms">Payment terms sought</label>
-          <input
-            id="requestedPaymentTerms"
-            name="requestedPaymentTerms"
-            className="input"
-            defaultValue={defaultPaymentTerms ?? ""}
-            placeholder="60 days from invoice"
-          />
+          <label className="field-label" htmlFor="goodsReadyDate">Goods ready date</label>
+          <input id="goodsReadyDate" name="goodsReadyDate" type="date" className="input" />
+          <p className="mt-1 text-xs text-charcoal/55">
+            When the goods need to be finished and ready. Shown to suppliers as context.
+          </p>
         </div>
         <div>
           <label className="field-label" htmlFor="requestedIncoterm">Incoterm sought</label>
-          <input
-            id="requestedIncoterm"
-            name="requestedIncoterm"
-            className="input"
-            defaultValue={defaultIncoterm ?? ""}
-            placeholder="DDP"
-          />
+          <input id="requestedIncoterm" name="requestedIncoterm" className="input" defaultValue={defaultIncoterm ?? ""} placeholder="DDP" />
         </div>
       </div>
 
@@ -251,14 +241,7 @@ export function RfqForm({
 
       <div>
         <label className="field-label" htmlFor="brief">Attach the brief</label>
-        <input
-          id="brief"
-          name="brief"
-          type="file"
-          multiple
-          className="input"
-          accept=".pdf,.docx,.xlsx,.pptx,.png,.jpg,.jpeg,.ai,.zip"
-        />
+        <input id="brief" name="brief" type="file" multiple className="input" accept=".pdf,.docx,.xlsx,.pptx,.png,.jpg,.jpeg,.ai,.zip" />
         <p className="mt-1 text-xs text-charcoal/55">
           Up to 8 MB each. Attachments are sent with the invitation email, so a supplier can judge the job without
           signing in. More can be added later.
@@ -268,15 +251,15 @@ export function RfqForm({
       <div className="border-t border-line pt-5">
         <p className="eyebrow">How bids should be scored</p>
         <p className="mt-1 text-xs text-charcoal/55">
-          Relative weights, so they need not add to 100. Favour lead time when a launch date is fixed, price when
-          it is not.
+          Equal by default. Relative, so they need not add to 100, and a criterion set to zero drops out of the
+          calculation entirely.
         </p>
-        <div className="mt-4 grid gap-5 sm:grid-cols-4">
+        <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {([
             ["price", "Price", "weightPrice"],
             ["leadTime", "Lead time", "weightLeadTime"],
             ["capacity", "Capacity", "weightCapacity"],
-            ["reliability", "Track record", "weightReliability"],
+            ["moq", "Minimum order", "weightMoq"],
           ] as const).map(([key, label, name]) => (
             <div key={key}>
               <label className="field-label" htmlFor={name}>

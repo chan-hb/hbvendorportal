@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/session";
-import { isInternal } from "@/lib/rbac";
+import { canAdminister, isInternal } from "@/lib/rbac";
 import { compareRfq, getRfq, markInvitationViewed } from "@/lib/rfq/service";
 import { explainWinner } from "@/lib/rfq/scoring";
 import { dateTime, shortDate } from "@/lib/format";
@@ -12,6 +12,7 @@ import { BidForm } from "@/components/BidForm";
 import { BidComparison } from "@/components/BidComparison";
 import { RfqAttachments } from "@/components/RfqAttachments";
 import { ProvisionalVendorForm } from "@/components/ProvisionalVendorForm";
+import { DeleteRfq } from "@/components/DeleteControls";
 
 export default async function RfqDetail({
   params,
@@ -50,7 +51,8 @@ export default async function RfqDetail({
         <Panel title="What is being sourced">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-5 p-5 sm:grid-cols-3">
             <Field label="Item" value={itemLabel} />
-            <Field label="Quantity" value={`${Number(rfq.targetQuantity).toLocaleString()} ${rfq.unit ?? ""}`} />
+            <Field label="Launch quantity" value={`${Number(rfq.launchQuantity).toLocaleString()} ${rfq.unit ?? ""}`} />
+            <Field label="Full year quantity" value={`${Number(rfq.fullYearQuantity).toLocaleString()} ${rfq.unit ?? ""}`} />
             <Field label="Currency" value={rfq.currency} />
             <Field
               label="Price breaks wanted"
@@ -58,8 +60,8 @@ export default async function RfqDetail({
             />
             <Field label="Quotations close" value={shortDate(rfq.closesAt)} />
             <Field label="Legal entity" value={rfq.dataAreaId.toUpperCase()} />
-            <Field label="Payment terms sought" value={rfq.requestedPaymentTerms ?? "Tell us what you offer"} />
             <Field label="Incoterm sought" value={rfq.requestedIncoterm ?? "Tell us what you offer"} />
+            <Field label="Goods ready by" value={shortDate(rfq.goodsReadyDate)} />
           </dl>
           {rfq.notes ? (
             <div className="border-t border-line px-5 py-4">
@@ -95,9 +97,9 @@ export default async function RfqDetail({
               rfqId={id}
               currency={rfq.currency}
               unit={rfq.unit}
-              targetQuantity={Number(rfq.targetQuantity)}
+              launchQuantity={Number(rfq.launchQuantity)}
+              fullYearQuantity={Number(rfq.fullYearQuantity)}
               quantityTiers={rfq.quantityTiers.map((t) => Number(t))}
-              requestedPaymentTerms={rfq.requestedPaymentTerms}
               requestedIncoterm={rfq.requestedIncoterm}
               readOnly={closed && myBid?.status === "SUBMITTED"}
               existing={
@@ -107,10 +109,12 @@ export default async function RfqDetail({
                       notes: myBid.notes ?? "",
                       quotationDate: myBid.quotationDate?.toISOString().slice(0, 10) ?? "",
                       validUntil: myBid.validUntil?.toISOString().slice(0, 10) ?? "",
+                      samplingLeadTimeDays:
+                        myBid.samplingLeadTimeDays !== null ? String(myBid.samplingLeadTimeDays) : "",
                       leadTimeDays: myBid.leadTimeDays !== null ? String(myBid.leadTimeDays) : "",
                       weeklyCapacity: myBid.weeklyCapacity !== null ? String(myBid.weeklyCapacity) : "",
                       moq: myBid.moq !== null ? String(myBid.moq) : "",
-                      paymentTerms: myBid.paymentTerms ?? "",
+                      paymentTermsDays: myBid.paymentTermsDays !== null ? String(myBid.paymentTermsDays) : "",
                       incoterm: myBid.incoterm ?? "",
                       tiers: myBid.lines.map((l) => ({
                         quantity: Number(l.quantity),
@@ -239,7 +243,8 @@ export default async function RfqDetail({
                 rfqId={id}
                 currency={rfq.currency}
                 unit={rfq.unit}
-                targetQuantity={Number(rfq.targetQuantity)}
+                launchQuantity={Number(rfq.launchQuantity)}
+                fullYearQuantity={Number(rfq.fullYearQuantity)}
                 recommendation={explainWinner(scores, rfq.currency)}
                 canAward={rfq.status !== "CANCELLED"}
                 awardedBidId={rfq.awardedBidId}
@@ -286,7 +291,8 @@ export default async function RfqDetail({
             <dl className="grid grid-cols-2 gap-x-4 gap-y-4 p-5">
               <Field label="Item" value={itemLabel} />
               <Field label="Entity" value={rfq.dataAreaId.toUpperCase()} />
-              <Field label="Quantity" value={`${Number(rfq.targetQuantity).toLocaleString()} ${rfq.unit ?? ""}`} />
+              <Field label="Launch quantity" value={`${Number(rfq.launchQuantity).toLocaleString()} ${rfq.unit ?? ""}`} />
+            <Field label="Full year quantity" value={`${Number(rfq.fullYearQuantity).toLocaleString()} ${rfq.unit ?? ""}`} />
               <Field label="Currency" value={rfq.currency} />
               <Field label="Closes" value={shortDate(rfq.closesAt)} />
               <Field
@@ -307,7 +313,7 @@ export default async function RfqDetail({
                 ["Price", rfq.weightPrice],
                 ["Lead time", rfq.weightLeadTime],
                 ["Capacity", rfq.weightCapacity],
-                ["Track record", rfq.weightReliability],
+                ["Minimum order", rfq.weightMoq],
               ].map(([label, w]) => (
                 <li key={String(label)} className="flex items-center justify-between gap-3">
                   <span>{label}</span>
@@ -316,6 +322,12 @@ export default async function RfqDetail({
               ))}
             </ul>
           </Panel>
+
+          {canAdminister(user.role) ? (
+            <Panel title="Delete this RFQ">
+              <DeleteRfq rfqId={id} reference={rfq.reference} blocked={rfq.status === "AWARDED"} />
+            </Panel>
+          ) : null}
 
           {rfq.awardReason ? (
             <Panel title="Award reason">

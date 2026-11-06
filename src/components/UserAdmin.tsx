@@ -12,6 +12,7 @@ import {
   type AuthState,
 } from "@/app/actions/account";
 import type { ActionState } from "@/app/actions/agreements";
+import { DeleteUser } from "@/components/DeleteControls";
 
 const ROLES: Role[] = ["HB_ADMIN", "HB_APPROVER", "HB_USER", "VENDOR"];
 const ROLE_LABEL: Record<Role, string> = {
@@ -32,6 +33,8 @@ type UserRow = {
   mustChangePassword: boolean;
   lockedUntil: string | null;
   failedLoginCount: number;
+  /** How many records carry this user's name, which decides whether they can be deleted. */
+  recordCount: number;
 };
 
 export function UserAdmin({ users }: { users: UserRow[] }) {
@@ -206,6 +209,9 @@ export function UserAdmin({ users }: { users: UserRow[] }) {
                             </button>
                           </form>
                         ) : null}
+                      </div>
+                      <div className="mt-2">
+                        <DeleteUser userId={u.id} email={u.email} recordCount={u.recordCount} />
                       </div>
                     </td>
                   </tr>

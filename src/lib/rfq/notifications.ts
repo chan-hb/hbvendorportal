@@ -68,14 +68,15 @@ export async function notifyVendorInvited(rfqId: string, vendorId: string, actor
   const item = rfq.itemNumber ?? rfq.localItem?.name ?? "See the portal";
   const body = layout({
     heading: "You are invited to quote",
-    intro: `Huda Beauty has invited ${vendor.name} to submit a quotation for ${rfq.title}. Please price each quantity break, and tell us your lead time, weekly capacity, minimum order quantity and payment terms.`,
+    intro: `Huda Beauty has invited ${vendor.name} to submit a quotation for ${rfq.title}. Please price each quantity break, and tell us your sampling lead time, production lead time, weekly capacity, minimum order quantity and payment terms in days.`,
     rows: [
       ["Reference", rfq.reference],
       ["Item", item],
-      ["Quantity sought", `${Number(rfq.targetQuantity).toLocaleString()} ${rfq.unit ?? ""}`.trim()],
+      ["Launch quantity", `${Number(rfq.launchQuantity).toLocaleString()} ${rfq.unit ?? ""}`.trim()],
+      ["Full year quantity", `${Number(rfq.fullYearQuantity).toLocaleString()} ${rfq.unit ?? ""}`.trim()],
       ["Price breaks wanted", tiers || "As you see fit"],
       ["Currency", rfq.currency],
-      ["Payment terms sought", rfq.requestedPaymentTerms ?? "Tell us what you offer"],
+      ["Goods ready by", rfq.goodsReadyDate ? shortDate(rfq.goodsReadyDate) : "To be agreed"],
       ["Quotations close", shortDate(rfq.closesAt)],
       ...(files.length ? ([["Attached", files.map((f) => f.filename).join(", ")]] as [string, string][]) : []),
     ],

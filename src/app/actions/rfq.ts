@@ -10,6 +10,10 @@ import {
   addProvisionalVendor,
   awardRfq,
   closeRfq,
+  deleteAgreement,
+  deleteLocalItem,
+  deleteRfq,
+  deleteUser,
   createLocalItem,
   createRfq,
   declineInvitation,
@@ -87,19 +91,23 @@ const rfqSchema = z
     itemSource: z.enum(["ERP", "LOCAL"]),
     itemNumber: z.string().optional(),
     localItemId: z.string().optional(),
-    targetQuantity: z.coerce.number().positive("Quantity must be greater than zero"),
+    launchQuantity: z.coerce.number().positive("Launch quantity must be greater than zero"),
+    fullYearQuantity: z.coerce.number().positive("Full year quantity must be greater than zero"),
     unit: z.string().optional(),
-    requiredByDate: z.string().optional(),
+    goodsReadyDate: z.string().optional(),
     closesAt: z.coerce.date(),
     notes: z.string().optional(),
-    requestedPaymentTerms: z.string().optional(),
     requestedIncoterm: z.string().optional(),
     weightPrice: z.coerce.number().int().min(0).max(100),
     weightLeadTime: z.coerce.number().int().min(0).max(100),
     weightCapacity: z.coerce.number().int().min(0).max(100),
-    weightReliability: z.coerce.number().int().min(0).max(100),
+    weightMoq: z.coerce.number().int().min(0).max(100),
   })
-  .refine((v) => v.weightPrice + v.weightLeadTime + v.weightCapacity + v.weightReliability > 0, {
+  .refine((v) => v.fullYearQuantity >= v.launchQuantity, {
+    message: "The full year quantity cannot be smaller than the launch quantity",
+    path: ["fullYearQuantity"],
+  })
+  .refine((v) => v.weightPrice + v.weightLeadTime + v.weightCapacity + v.weightMoq > 0, {
     message: "At least one scoring weight must be above zero",
     path: ["weightPrice"],
   });
@@ -115,14 +123,14 @@ export async function createRfqAction(_prev: ActionState, formData: FormData): P
     .sort((a, b) => a - b);
   if (tiers.length === 0) return { error: "Choose at least one quantity break to be priced" };
 
-  const requiredBy = parsed.data.requiredByDate ? new Date(parsed.data.requiredByDate) : null;
+  const goodsReady = parsed.data.goodsReadyDate ? new Date(parsed.data.goodsReadyDate) : null;
 
   try {
     const me = await actor();
     const rfq = await createRfq(me, {
       ...parsed.data,
       quantityTiers: tiers,
-      requiredByDate: requiredBy && !Number.isNaN(requiredBy.getTime()) ? requiredBy : null,
+      goodsReadyDate: goodsReady && !Number.isNaN(goodsReady.getTime()) ? goodsReady : null,
     });
 
     // The brief travels with the RFQ, so it is stored before anyone is invited.
@@ -243,10 +251,11 @@ export async function submitBidAction(_prev: ActionState, formData: FormData): P
       {
         quotationDate: date("quotationDate"),
         validUntil: date("validUntil"),
+        samplingLeadTimeDays: num("samplingLeadTimeDays"),
         leadTimeDays: num("leadTimeDays"),
         weeklyCapacity: num("weeklyCapacity"),
         moq: num("moq"),
-        paymentTerms: String(formData.get("paymentTerms") ?? "") || undefined,
+        paymentTermsDays: num("paymentTermsDays"),
         incoterm: String(formData.get("incoterm") ?? "") || undefined,
         notes: String(formData.get("notes") ?? "") || undefined,
       },
@@ -384,7 +393,6 @@ export async function saveRfqSettingsAction(_prev: ActionState, formData: FormDa
           .map((e) => e.trim().toLowerCase())
           .filter((e) => e.includes("@")),
         standardTiers: tiers,
-        defaultPaymentTerms: String(formData.get("defaultPaymentTerms") ?? "").trim() || null,
         defaultIncoterm: String(formData.get("defaultIncoterm") ?? "").trim() || null,
         updatedBy: me.email,
       },
@@ -436,4 +444,74 @@ export async function removeAttachmentAction(_prev: ActionState, formData: FormD
   await prisma.rfqAttachment.delete({ where: { id: String(formData.get("id")) } }).catch(() => {});
   revalidatePath(`/rfq/${rfqId}`);
   return { ok: "Removed" };
+}
+
+
+// ---------------------------------------------------------------- deletion
+
+/**
+ * Each of these requires the reference to be typed back, which is slower than
+ * a confirmation dialog and deliberately so: these are irreversible and the
+ * friction is the point.
+ */
+function confirmationMatches(formData: FormData, expected: string): boolean {
+  return String(formData.get("confirm") ?? "").trim().toUpperCase() === expected.trim().toUpperCase();
+}
+
+export async function deleteRfqAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const reference = String(formData.get("reference") ?? "");
+  if (!confirmationMatches(formData, reference)) {
+    return { error: `Type ${reference} to confirm. Nothing has been deleted.` };
+  }
+  try {
+    const deleted = await deleteRfq(await actor(), String(formData.get("rfqId")));
+    revalidatePath("/rfq");
+    redirect("/rfq?deleted=" + encodeURIComponent(deleted));
+  } catch (err) {
+    if ((err as { digest?: string }).digest?.startsWith("NEXT_REDIRECT")) throw err;
+    return { error: (err as Error).message };
+  }
+}
+
+export async function deleteLocalItemAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const code = String(formData.get("localCode") ?? "");
+  if (!confirmationMatches(formData, code)) {
+    return { error: `Type ${code} to confirm. Nothing has been deleted.` };
+  }
+  try {
+    const deleted = await deleteLocalItem(await actor(), String(formData.get("localItemId")));
+    revalidatePath("/local-items");
+    return { ok: `${deleted} deleted.` };
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+}
+
+export async function deleteAgreementAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const reference = String(formData.get("reference") ?? "");
+  if (!confirmationMatches(formData, reference)) {
+    return { error: `Type ${reference} to confirm. Nothing has been deleted.` };
+  }
+  try {
+    const deleted = await deleteAgreement(await actor(), String(formData.get("agreementId")));
+    revalidatePath("/agreements");
+    redirect("/agreements?deleted=" + encodeURIComponent(deleted));
+  } catch (err) {
+    if ((err as { digest?: string }).digest?.startsWith("NEXT_REDIRECT")) throw err;
+    return { error: (err as Error).message };
+  }
+}
+
+export async function deleteUserAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const email = String(formData.get("email") ?? "");
+  if (!confirmationMatches(formData, email)) {
+    return { error: `Type ${email} to confirm. Nothing has been deleted.` };
+  }
+  try {
+    const deleted = await deleteUser(await actor(), String(formData.get("userId")));
+    revalidatePath("/admin/users");
+    return { ok: `${deleted} deleted.` };
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
 }

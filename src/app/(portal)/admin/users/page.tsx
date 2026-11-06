@@ -5,7 +5,18 @@ import { UserAdmin } from "@/components/UserAdmin";
 export default async function UsersPage() {
   await requireAdmin();
   const users = await prisma.user.findMany({
-    include: { vendor: { select: { name: true } } },
+    include: {
+      vendor: { select: { name: true } },
+      _count: {
+        select: {
+          createdAgs: true,
+          rfqsCreated: true,
+          localItems: true,
+          bidsSubmitted: true,
+          historyEntries: true,
+        },
+      },
+    },
     orderBy: [{ role: "asc" }, { email: "asc" }],
   });
 
@@ -31,6 +42,12 @@ export default async function UsersPage() {
           mustChangePassword: u.mustChangePassword,
           lockedUntil: u.lockedUntil?.toISOString() ?? null,
           failedLoginCount: u.failedLoginCount,
+          recordCount:
+            u._count.createdAgs +
+            u._count.rfqsCreated +
+            u._count.localItems +
+            u._count.bidsSubmitted +
+            u._count.historyEntries,
         }))}
       />
     </div>
