@@ -34,6 +34,9 @@ type Score = {
 type BidRow = {
   id: string;
   vendorName: string;
+  /** Launch data sheet progress, which gates the award. */
+  dataSheetComplete: boolean;
+  dataSheetMissing: string[];
   notes: string | null;
   quotationDate: string | null;
   validUntil: string | null;
@@ -187,6 +190,11 @@ export function BidComparison({
                       {s.warnings.map((w) => (
                         <span key={w} className="block text-xs text-nude">{w}</span>
                       ))}
+                      {bids.find((b) => b.id === s.bidId)?.dataSheetComplete === false ? (
+                        <span className="block text-xs text-[#A32B2B]">
+                          Launch data sheet incomplete, cannot be awarded
+                        </span>
+                      ) : null}
                     </td>
                     <td className="td">
                       <span className="font-display text-2xl font-black text-vanta">{s.total}</span>
@@ -310,9 +318,15 @@ export function BidComparison({
             <div>
               <label className="field-label" htmlFor="bidId">Award to</label>
               <select id="bidId" name="bidId" className="input" value={selected} onChange={(e) => setSelected(e.target.value)}>
-                {scores.map((s) => (
-                  <option key={s.bidId} value={s.bidId}>{s.vendorName} ({s.total} of 100)</option>
-                ))}
+                {scores.map((s) => {
+                  const blocked = bids.find((b) => b.id === s.bidId)?.dataSheetComplete === false;
+                  return (
+                    <option key={s.bidId} value={s.bidId} disabled={blocked}>
+                      {s.vendorName} ({s.total} of 100)
+                      {blocked ? " . data sheet incomplete" : ""}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <div>

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { isInternal } from "@/lib/rbac";
 import type { Actor } from "@/lib/agreements";
 import { computeMetrics, scoreBids, type BidWithLines } from "./scoring";
+import { checkCompletenessFor, toAnswerMap } from "./questionnaire";
 import { notifyAllBidsIn, notifyVendorInvited } from "./notifications";
 
 // ---------------------------------------------------------------- references
@@ -80,6 +81,7 @@ export type RfqInput = {
   title: string;
   dataAreaId: string;
   currency: string;
+  vendorType: "CM" | "PRIMARY_PACK" | "SECONDARY_PACK" | "LABELS";
   itemSource: "ERP" | "LOCAL";
   itemNumber?: string;
   localItemId?: string;
@@ -114,6 +116,7 @@ export async function createRfq(actor: Actor, input: RfqInput) {
       title: input.title,
       dataAreaId: input.dataAreaId,
       currency: input.currency,
+      vendorType: input.vendorType,
       itemSource: input.itemSource,
       itemNumber: input.itemSource === "ERP" ? input.itemNumber : null,
       localItemId: input.itemSource === "LOCAL" ? input.localItemId : null,
@@ -179,6 +182,8 @@ export async function inviteVendors(actor: Actor, rfqId: string, vendorIds: stri
 
 export type BidLineInput = { quantity: number; unitPrice: number; notes?: string };
 
+export type BidAnswersInput = Record<string, string>;
+
 export type BidTermsInput = {
   quotationDate?: Date | null;
   validUntil?: Date | null;
@@ -201,6 +206,7 @@ export async function submitBid(
   rfqId: string,
   lines: BidLineInput[],
   terms: BidTermsInput,
+  answers: BidAnswersInput,
   asDraft: boolean,
 ) {
   if (actor.role !== "VENDOR" || !actor.vendorId) throw new Error("Only vendor users can quote");
@@ -256,7 +262,15 @@ export async function submitBid(
     update: data,
   });
 
+  // Answers are replaced wholesale alongside the lines, for the same reason:
+  // a quotation is one statement, not a merge of two.
+  const answerRows = Object.entries(answers)
+    .filter(([, value]) => String(value ?? "").trim() !== "")
+    .map(([questionKey, value]) => ({ bidId: bid.id, questionKey, value: String(value).trim() }));
+
   await prisma.$transaction([
+    prisma.bidAnswer.deleteMany({ where: { bidId: bid.id } }),
+    prisma.bidAnswer.createMany({ data: answerRows }),
     prisma.bidLine.deleteMany({ where: { bidId: bid.id } }),
     prisma.bidLine.createMany({
       data: lines
@@ -310,7 +324,11 @@ export async function compareRfq(rfqId: string) {
 
   const bids = (await prisma.bid.findMany({
     where: { rfqId, status: "SUBMITTED" },
-    include: { lines: { orderBy: { quantity: "asc" } }, vendor: { select: { id: true, name: true, code: true } } },
+    include: {
+      lines: { orderBy: { quantity: "asc" } },
+      answers: true,
+      vendor: { select: { id: true, name: true, code: true } },
+    },
   })) as BidWithLines[];
 
   return { rfq, bids, scores: scoreBids(rfq, bids) };
@@ -319,9 +337,27 @@ export async function compareRfq(rfqId: string) {
 export async function awardRfq(actor: Actor, rfqId: string, bidId: string, reason?: string) {
   if (!isInternal(actor.role)) throw new Error("Not permitted");
 
-  const bid = await prisma.bid.findUniqueOrThrow({ where: { id: bidId }, include: { vendor: true } });
+  const bid = await prisma.bid.findUniqueOrThrow({
+    where: { id: bidId },
+    include: { vendor: true, answers: true },
+  });
   if (bid.rfqId !== rfqId) throw new Error("That bid belongs to a different RFQ");
   if (bid.status !== "SUBMITTED") throw new Error("Only a submitted bid can be awarded");
+
+  // The launch data sheet has to be complete before the business is placed.
+  // Chasing it afterwards never works, and the answers feed planning.
+  const rfqForAward = await prisma.rfq.findUniqueOrThrow({
+    where: { id: rfqId },
+    select: { vendorType: true },
+  });
+  const completeness = await checkCompletenessFor(rfqForAward.vendorType, toAnswerMap(bid.answers));
+  if (!completeness.complete) {
+    throw new Error(
+      `${bid.vendor.name} has not finished the launch data sheet. Missing: ${completeness.missing
+        .map((q) => q.label)
+        .join(", ")}. Ask them to complete it before awarding.`,
+    );
+  }
 
   await prisma.rfq.update({
     where: { id: rfqId },

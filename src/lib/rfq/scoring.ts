@@ -16,7 +16,12 @@ import type { Bid, BidLine, Rfq } from "@prisma/client";
  * lost, so every number is reproducible and the breakdown is on screen.
  */
 
-export type BidWithLines = Bid & { lines: BidLine[]; vendor: { id: string; name: string; code: string } };
+export type BidWithLines = Bid & {
+  lines: BidLine[];
+  /** Launch data sheet answers, needed by the award gate and the buyer view. */
+  answers: { questionKey: string; value: string }[];
+  vendor: { id: string; name: string; code: string };
+};
 
 export type ScoreComponent = {
   key: "price" | "leadTime" | "capacity" | "moq";

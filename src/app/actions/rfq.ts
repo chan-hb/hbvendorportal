@@ -88,6 +88,7 @@ const rfqSchema = z
     title: z.string().min(3, "Give the RFQ a title"),
     dataAreaId: z.string().min(1, "Choose a legal entity"),
     currency: z.string().length(3).toUpperCase(),
+    vendorType: z.enum(["CM", "PRIMARY_PACK", "SECONDARY_PACK", "LABELS"]),
     itemSource: z.enum(["ERP", "LOCAL"]),
     itemNumber: z.string().optional(),
     localItemId: z.string().optional(),
@@ -243,6 +244,12 @@ export async function submitBidAction(_prev: ActionState, formData: FormData): P
     return Number.isNaN(d.getTime()) ? null : d;
   };
 
+  // Prefixed so a question key can never collide with a form field name.
+  const answers: Record<string, string> = {};
+  for (const [name, value] of formData.entries()) {
+    if (name.startsWith("answer_")) answers[name.slice("answer_".length)] = String(value);
+  }
+
   try {
     await submitBid(
       await actor(),
@@ -259,6 +266,7 @@ export async function submitBidAction(_prev: ActionState, formData: FormData): P
         incoterm: String(formData.get("incoterm") ?? "") || undefined,
         notes: String(formData.get("notes") ?? "") || undefined,
       },
+      answers,
       asDraft,
     );
     revalidatePath(`/rfq/${rfqId}`);

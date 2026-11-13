@@ -506,6 +506,16 @@ enum RfqItemSource {
   LOCAL
 }
 
+/// Which part of the launch data sheet applies. Decides which questions a
+/// supplier is asked, since a contract manufacturer and a label printer are
+/// asked quite different things.
+enum RfqVendorType {
+  CM
+  PRIMARY_PACK
+  SECONDARY_PACK
+  LABELS
+}
+
 model Rfq {
   id        String    @id @default(cuid())
   reference String    @unique // RFQ-2026-000001
@@ -516,6 +526,7 @@ model Rfq {
   currency   String
 
   // The subject of the RFQ is either a synced ERP item or a local one.
+  vendorType  RfqVendorType
   itemSource  RfqItemSource
   itemNumber  String? // set when itemSource is ERP
   localItemId String?
@@ -678,10 +689,89 @@ model Bid {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  lines BidLine[]
+  lines   BidLine[]
+  answers BidAnswer[]
 
   @@unique([rfqId, vendorId])
   @@index([rfqId, status])
+}
+
+enum QuestionType {
+  TEXT
+  LONGTEXT
+  NUMBER
+  YESNO
+  CHOICE
+}
+
+enum QuestionSource {
+  /// The supplier types an answer.
+  ANSWER
+  /// Filled from the quotation and shown read-only, so nothing is asked twice.
+  QUOTATION
+}
+
+/// Which quotation field fills a QUOTATION question.
+enum QuestionBidField {
+  VENDOR_NAME
+  INCOTERM
+  MOQ
+  WEEKLY_CAPACITY
+  LEAD_TIME_DAYS
+  SAMPLING_LEAD_TIME_DAYS
+  PAYMENT_TERMS_DAYS
+}
+
+/// A launch data sheet question.
+///
+/// Held as data rather than code so Purchasing can add, reword and retire
+/// questions without a deployment. One question can apply to several vendor
+/// types, which is how the shared ones (supplier name, incoterms, MOQ) are
+/// expressed without repeating them.
+model RfqQuestion {
+  id    String @id @default(cuid())
+  /// Stable identifier stored against each answer. Deliberately not the label,
+  /// so a question can be reworded without orphaning what suppliers answered.
+  key   String @unique
+  label String
+
+  type     QuestionType     @default(TEXT)
+  source   QuestionSource   @default(ANSWER)
+  bidField QuestionBidField?
+
+  /// Choices, for a CHOICE question.
+  options String[] @default([])
+  unit    String?
+  help    String?
+
+  required Boolean @default(true)
+
+  /// Which RFQ vendor types this question appears on.
+  vendorTypes RfqVendorType[] @default([])
+
+  sortOrder Int     @default(100)
+  /// Retired rather than deleted once answers exist, so historic data sheets
+  /// still render in full.
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  @@index([isActive, sortOrder])
+}
+
+/// One launch data sheet answer. Keyed by question rather than by column, so a
+/// question can be added or reworded without a migration.
+model BidAnswer {
+  id          String @id @default(cuid())
+  bidId       String
+  bid         Bid    @relation(fields: [bidId], references: [id], onDelete: Cascade)
+  questionKey String
+  value       String
+
+  @@unique([bidId, questionKey])
+  @@index([bidId])
 }
 
 /// One price break: at this quantity, this unit price.

@@ -3,6 +3,8 @@
 import { useActionState, useMemo, useState } from "react";
 import { SubmitButton } from "@/components/SubmitButton";
 import { declineInvitationAction, submitBidAction } from "@/app/actions/rfq";
+import { LaunchDataSheet } from "@/components/LaunchDataSheet";
+import { bracketLabels, type Question } from "@/lib/rfq/questionnaire";
 import type { ActionState } from "@/app/actions/agreements";
 
 type Tier = { quantity: number; unitPrice: string; notes: string };
@@ -15,6 +17,10 @@ export function BidForm({
   fullYearQuantity,
   quantityTiers,
   requestedIncoterm,
+  vendorName,
+  section,
+  questions,
+  answers,
   existing,
   readOnly,
 }: {
@@ -25,6 +31,11 @@ export function BidForm({
   fullYearQuantity: number;
   quantityTiers: number[];
   requestedIncoterm?: string | null;
+  vendorName: string;
+  /** The launch data sheet section this RFQ's vendor type maps to. */
+  section: string;
+  questions: Question[];
+  answers: Record<string, string>;
   existing?: {
     status: string;
     notes: string;
@@ -61,8 +72,15 @@ export function BidForm({
     return rows.sort((a, b) => a.quantity - b.quantity);
   });
 
+  // Price breaks read as ranges, so it is obvious which volumes a price covers.
+  const brackets = useMemo(() => bracketLabels(tiers.map((t) => t.quantity)), [tiers]);
+
   const [weeklyCapacity, setWeeklyCapacity] = useState(existing?.weeklyCapacity ?? "");
   const [leadTimeDays, setLeadTimeDays] = useState(existing?.leadTimeDays ?? "");
+  const [moq, setMoq] = useState(existing?.moq ?? "");
+  const [samplingLeadTimeDays, setSamplingLeadTimeDays] = useState(existing?.samplingLeadTimeDays ?? "");
+  const [paymentTermsDays, setPaymentTermsDays] = useState(existing?.paymentTermsDays ?? "");
+  const [incoterm, setIncoterm] = useState(existing?.incoterm ?? requestedIncoterm ?? "");
 
   const summary = useMemo(() => {
     const priced = tiers.filter((t) => Number(t.unitPrice) > 0);
@@ -117,13 +135,13 @@ export function BidForm({
         <section>
           <p className="eyebrow">Price by quantity</p>
           <p className="mt-1 text-xs text-charcoal/55">
-            Leave a row blank if you would rather not supply that volume.
+            Each row is a volume range. Price the ranges you can supply and leave the others blank.
           </p>
           <div className="mt-3 overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="th">Quantity {unit ? `(${unit})` : ""}</th>
+                  <th className="th">Quantity range {unit ? `(${unit})` : ""}</th>
                   <th className="th">Unit price ({currency})</th>
                   <th className="th">Note</th>
                 </tr>
@@ -135,7 +153,7 @@ export function BidForm({
                     className={`border-t border-line/60 ${t.quantity === summary.referenceTier ? "bg-pink-50/60" : ""}`}
                   >
                     <td className="td font-medium">
-                      {t.quantity.toLocaleString()}
+                      {brackets.find((b) => b.quantity === t.quantity)?.label ?? t.quantity.toLocaleString()}
                       <input type="hidden" name="quantity" value={t.quantity} />
                       {t.quantity === summary.referenceTier ? (
                         <span className="ml-2 text-[10px] font-bold uppercase tracking-[0.1em] text-pink">
@@ -192,7 +210,8 @@ export function BidForm({
                 max="365"
                 className="input"
                 required
-                defaultValue={existing?.samplingLeadTimeDays}
+                value={samplingLeadTimeDays}
+                onChange={(e) => setSamplingLeadTimeDays(e.target.value)}
                 placeholder="14"
               />
               <p className="mt-1 text-xs text-charcoal/55">How long a first sample takes.</p>
@@ -228,7 +247,17 @@ export function BidForm({
             </div>
             <div>
               <label className="field-label field-label-required" htmlFor="moq">Minimum order quantity</label>
-              <input id="moq" name="moq" type="number" step="0.0001" min="0" className="input" required defaultValue={existing?.moq} />
+              <input
+                id="moq"
+                name="moq"
+                type="number"
+                step="0.0001"
+                min="0"
+                className="input"
+                required
+                value={moq}
+                onChange={(e) => setMoq(e.target.value)}
+              />
             </div>
             <div>
               <label className="field-label" htmlFor="incoterm">Incoterm</label>
@@ -236,7 +265,8 @@ export function BidForm({
                 id="incoterm"
                 name="incoterm"
                 className="input"
-                defaultValue={existing?.incoterm ?? requestedIncoterm ?? ""}
+                value={incoterm}
+                onChange={(e) => setIncoterm(e.target.value)}
               />
             </div>
             <div>
@@ -251,7 +281,8 @@ export function BidForm({
                 max="365"
                 className="input"
                 required
-                defaultValue={existing?.paymentTermsDays}
+                value={paymentTermsDays}
+                onChange={(e) => setPaymentTermsDays(e.target.value)}
                 placeholder="60"
               />
               <p className="mt-1 text-xs text-charcoal/55">
@@ -311,6 +342,24 @@ export function BidForm({
             placeholder="Tooling costs, material assumptions, anything conditional about the price"
           />
         </div>
+
+        <section className="border-t border-line pt-5">
+          <LaunchDataSheet
+            section={section}
+            questions={questions}
+            answers={answers}
+            derived={{
+              VENDOR_NAME: vendorName,
+              INCOTERM: incoterm,
+              MOQ: moq,
+              WEEKLY_CAPACITY: weeklyCapacity,
+              LEAD_TIME_DAYS: leadTimeDays,
+              SAMPLING_LEAD_TIME_DAYS: samplingLeadTimeDays,
+              PAYMENT_TERMS_DAYS: paymentTermsDays,
+            }}
+            readOnly={readOnly}
+          />
+        </section>
 
         <div className="flex flex-wrap gap-3">
           <SubmitButton name="intent" value="submit">

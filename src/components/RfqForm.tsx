@@ -3,6 +3,8 @@
 import { useActionState, useEffect, useState } from "react";
 import { SubmitButton } from "@/components/SubmitButton";
 import type { ActionState } from "@/app/actions/agreements";
+import { bracketLabel, VENDOR_TYPE_LABEL } from "@/lib/rfq/questionnaire";
+import type { RfqVendorType } from "@prisma/client";
 
 type ItemOption = { itemNumber: string; productName: string | null; unit: string | null };
 type LocalItem = { id: string; localCode: string; name: string; unit: string | null; erpItemNumber: string | null };
@@ -21,6 +23,7 @@ export function RfqForm({
   defaultIncoterm?: string | null;
 }) {
   const [state, formAction] = useActionState(action, null);
+  const [vendorType, setVendorType] = useState<RfqVendorType>("CM");
   const [itemSource, setItemSource] = useState<"ERP" | "LOCAL">("ERP");
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<ItemOption[]>([]);
@@ -60,6 +63,29 @@ export function RfqForm({
         <label className="field-label field-label-required" htmlFor="title">Title</label>
         <input id="title" name="title" className="input" required placeholder="Compact powder outer carton, Q4 launch" />
       </div>
+
+      {/* Decides which launch data sheet questions the supplier is asked. */}
+      <fieldset>
+        <legend className="field-label field-label-required">Type of vendor</legend>
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {(Object.keys(VENDOR_TYPE_LABEL) as RfqVendorType[]).map((v) => (
+            <label
+              key={v}
+              className={`cursor-pointer rounded-field border px-3 py-2.5 text-center text-xs transition ${
+                vendorType === v ? "border-pink bg-pink text-white" : "border-line bg-white text-charcoal/70"
+              }`}
+            >
+              <input type="radio" className="sr-only" checked={vendorType === v} onChange={() => setVendorType(v)} />
+              {VENDOR_TYPE_LABEL[v]}
+            </label>
+          ))}
+        </div>
+        <input type="hidden" name="vendorType" value={vendorType} />
+        <p className="mt-2 text-xs text-charcoal/55">
+          Sets which launch data sheet questions suppliers are asked. They must answer them before the RFQ can be
+          awarded, so pick the right one.
+        </p>
+      </fieldset>
 
       <fieldset>
         <legend className="field-label field-label-required">What are you sourcing?</legend>
@@ -148,8 +174,9 @@ export function RfqForm({
       <fieldset className="border-t border-line pt-5">
         <legend className="eyebrow">Quantity breaks to be priced *</legend>
         <p className="mt-1 text-xs text-charcoal/55">
-          Suppliers return a price against each. Ask for the volumes you might realistically order, since every
-          extra break is more work for them and more to compare.
+          Each break starts a range that runs up to the next one, so suppliers see what volumes a price covers.
+          Ask for the volumes you might realistically order: every extra break is more work for them and more to
+          compare.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {allTiers.map((t) => (
@@ -159,6 +186,18 @@ export function RfqForm({
             </label>
           ))}
         </div>
+
+        {/* Shown back as ranges, which is how the supplier will see them. */}
+        {tiers.length > 0 ? (
+          <div className="mt-3 rounded-field border border-line bg-blush/60 p-3">
+            <p className="field-label">Suppliers will be asked to price these ranges</p>
+            <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-charcoal/80">
+              {tiers.map((t, i) => (
+                <li key={t}>{bracketLabel(tiers, i)}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         {tiers.map((t) => <input key={t} type="hidden" name="quantityTiers" value={t} />)}
 
         <div className="mt-3 flex flex-wrap items-end gap-2">

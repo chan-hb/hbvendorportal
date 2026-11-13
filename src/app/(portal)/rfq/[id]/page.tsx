@@ -13,6 +13,15 @@ import { BidComparison } from "@/components/BidComparison";
 import { RfqAttachments } from "@/components/RfqAttachments";
 import { ProvisionalVendorForm } from "@/components/ProvisionalVendorForm";
 import { DeleteRfq } from "@/components/DeleteControls";
+import { LaunchDataSheetSummary } from "@/components/LaunchDataSheet";
+import {
+  bracketLabel,
+  checkCompleteness,
+  questionsFor,
+  toAnswerMap,
+  VENDOR_TYPE_LABEL,
+  VENDOR_TYPE_SECTION,
+} from "@/lib/rfq/questionnaire";
 
 export default async function RfqDetail({
   params,
@@ -30,6 +39,10 @@ export default async function RfqDetail({
   const rfq = await getRfq(actor, id);
   if (!rfq) notFound();
 
+  // Loaded once and passed down, so the two views and the completeness checks
+  // all read the same set.
+  const questions = await questionsFor(rfq.vendorType);
+
   // Opening the page is the signal that a vendor has seen the invitation.
   if (!internal && user.vendorId) await markInvitationViewed(id, user.vendorId);
 
@@ -40,8 +53,9 @@ export default async function RfqDetail({
   if (!internal) {
     const myBid = await prisma.bid.findUnique({
       where: { rfqId_vendorId: { rfqId: id, vendorId: user.vendorId! } },
-      include: { lines: { orderBy: { quantity: "asc" } } },
+      include: { lines: { orderBy: { quantity: "asc" } }, answers: true },
     });
+    const myAnswers = toAnswerMap(myBid?.answers ?? []);
     const invitation = rfq.invitations.find((i) => i.vendor.id === user.vendorId);
 
     return (
@@ -54,13 +68,18 @@ export default async function RfqDetail({
             <Field label="Launch quantity" value={`${Number(rfq.launchQuantity).toLocaleString()} ${rfq.unit ?? ""}`} />
             <Field label="Full year quantity" value={`${Number(rfq.fullYearQuantity).toLocaleString()} ${rfq.unit ?? ""}`} />
             <Field label="Currency" value={rfq.currency} />
-            <Field
-              label="Price breaks wanted"
-              value={rfq.quantityTiers.map((t) => Number(t).toLocaleString()).join(", ") || "As you see fit"}
-            />
             <Field label="Quotations close" value={shortDate(rfq.closesAt)} />
             <Field label="Legal entity" value={rfq.dataAreaId.toUpperCase()} />
             <Field label="Incoterm sought" value={rfq.requestedIncoterm ?? "Tell us what you offer"} />
+            <Field label="Vendor type" value={VENDOR_TYPE_LABEL[rfq.vendorType]} />
+            <Field
+              label="Price ranges wanted"
+              value={
+                rfq.quantityTiers.length
+                  ? rfq.quantityTiers.map((_, i) => bracketLabel(rfq.quantityTiers.map(Number), i)).join(", ")
+                  : "As you see fit"
+              }
+            />
             <Field label="Goods ready by" value={shortDate(rfq.goodsReadyDate)} />
           </dl>
           {rfq.notes ? (
@@ -101,6 +120,10 @@ export default async function RfqDetail({
               fullYearQuantity={Number(rfq.fullYearQuantity)}
               quantityTiers={rfq.quantityTiers.map((t) => Number(t))}
               requestedIncoterm={rfq.requestedIncoterm}
+              vendorName={rfq.invitations.find((i) => i.vendor.id === user.vendorId)?.vendor.name ?? ""}
+              section={VENDOR_TYPE_SECTION[rfq.vendorType]}
+              questions={questions}
+              answers={myAnswers}
               readOnly={closed && myBid?.status === "SUBMITTED"}
               existing={
                 myBid
@@ -167,6 +190,7 @@ export default async function RfqDetail({
           <nav className="flex gap-2">
             <Tab href={`/rfq/${id}?tab=vendors`} label={`Vendors (${rfq.invitations.length})`} active={activeTab === "vendors"} />
             <Tab href={`/rfq/${id}?tab=compare`} label={`Comparison (${bids.length})`} active={activeTab === "compare"} />
+            <Tab href={`/rfq/${id}?tab=datasheet`} label="Data sheets" active={activeTab === "datasheet"} />
             <Tab href={`/rfq/${id}?tab=activity`} label="Activity" active={activeTab === "activity"} />
           </nav>
 
@@ -249,15 +273,71 @@ export default async function RfqDetail({
                 canAward={rfq.status !== "CANCELLED"}
                 awardedBidId={rfq.awardedBidId}
                 scores={scores}
-                bids={bids.map((b) => ({
+                bids={bids.map((b) => {
+                  const completeness = checkCompleteness(questions, toAnswerMap(b.answers ?? []));
+                  return {
                   id: b.id,
                   vendorName: b.vendor.name,
+                  dataSheetComplete: completeness.complete,
+                  dataSheetMissing: completeness.missing.map((q) => q.label),
                   notes: b.notes,
                   quotationDate: b.quotationDate?.toISOString() ?? null,
                   validUntil: b.validUntil?.toISOString() ?? null,
                   incoterm: b.incoterm,
-                }))}
+                  };
+                })}
               />
+            </Panel>
+          ) : null}
+
+          {activeTab === "datasheet" ? (
+            <Panel
+              title="Launch data sheets"
+              subtitle={`${VENDOR_TYPE_SECTION[rfq.vendorType]} section, as answered by each supplier`}
+            >
+              {bids.length === 0 ? (
+                <p className="px-5 py-8 text-sm text-charcoal/60">No quotations yet.</p>
+              ) : (
+                <div className="divide-y divide-line">
+                  {bids.map((b) => {
+                    const answers = toAnswerMap(b.answers ?? []);
+                    const completeness = checkCompleteness(questions, answers);
+                    return (
+                      <div key={b.id} className="px-5 py-5">
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                          <p className="section-title">{b.vendor.name}</p>
+                          <span className={`badge ${completeness.complete ? "state-done" : "state-waiting"}`}>
+                            {completeness.complete
+                              ? "Complete"
+                              : `${completeness.answered} of ${completeness.total}`}
+                          </span>
+                        </div>
+                        <LaunchDataSheetSummary
+                          questions={questions}
+                          answers={answers}
+                          derived={{
+                            VENDOR_NAME: b.vendor.name,
+                            INCOTERM: b.incoterm ?? "",
+                            MOQ: b.moq !== null ? String(b.moq) : "",
+                            WEEKLY_CAPACITY: b.weeklyCapacity !== null ? String(b.weeklyCapacity) : "",
+                            LEAD_TIME_DAYS: b.leadTimeDays !== null ? String(b.leadTimeDays) : "",
+                            SAMPLING_LEAD_TIME_DAYS:
+                              b.samplingLeadTimeDays !== null ? String(b.samplingLeadTimeDays) : "",
+                            PAYMENT_TERMS_DAYS:
+                              b.paymentTermsDays !== null ? String(b.paymentTermsDays) : "",
+                          }}
+                        />
+                        {!completeness.complete ? (
+                          <p className="mt-4 alert-note">
+                            Cannot be awarded until this is finished. Missing:{" "}
+                            {completeness.missing.map((q) => q.label).join(", ")}.
+                          </p>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </Panel>
           ) : null}
 
@@ -295,6 +375,7 @@ export default async function RfqDetail({
             <Field label="Full year quantity" value={`${Number(rfq.fullYearQuantity).toLocaleString()} ${rfq.unit ?? ""}`} />
               <Field label="Currency" value={rfq.currency} />
               <Field label="Closes" value={shortDate(rfq.closesAt)} />
+              <Field label="Vendor type" value={VENDOR_TYPE_LABEL[rfq.vendorType]} />
               <Field
                 label="Breaks"
                 value={rfq.quantityTiers.map((t) => Number(t).toLocaleString()).join(", ") || "None set"}

@@ -22,7 +22,12 @@ export default async function PortalLayout({
     { href: "/price-history", label: "Price history" },
     { href: "/items", label: "Item master" },
     ...(internal ? [{ href: "/local-items", label: "New items" }] : []),
-    ...(canApprove(user.role) ? [{ href: "/admin/rfq-settings", label: "RFQ settings" }] : []),
+    ...(canApprove(user.role)
+      ? [
+          { href: "/admin/questions", label: "Data sheet" },
+          { href: "/admin/rfq-settings", label: "RFQ settings" },
+        ]
+      : []),
     ...(canAdminister(user.role)
       ? [
           { href: "/admin/vendors", label: "Vendors" },
@@ -40,7 +45,7 @@ export default async function PortalLayout({
         <div className="mx-auto flex max-w-[1400px] items-center gap-6 px-6 py-4">
           <Link href="/" className="shrink-0 transition hover:opacity-70" aria-label="Huda Beauty, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/hb-logo.png" alt="Huda Beauty" width={160} height={28} className="h-5 w-auto sm:h-6" />
+            <img src="/hb-logo.png" alt="Huda Beauty" width={160} height={28} className="h-7 w-auto sm:h-9" />
           </Link>
 
           <div className="ml-auto flex items-center gap-5">
