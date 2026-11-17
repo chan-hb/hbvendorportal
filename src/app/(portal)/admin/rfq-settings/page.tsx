@@ -17,7 +17,7 @@ export default async function RfqSettingsPage() {
   // Purchasing owns this, so approvers get in as well as administrators.
   if (!canApprove(user.role) && !canAdminister(user.role)) redirect("/rfq");
 
-  const [settings, staff, sender] = await Promise.all([
+  const [settings, staff, sender, legalEntities] = await Promise.all([
     getRfqSettings(),
     prisma.user.findMany({
       where: { role: { in: ["HB_USER", "HB_APPROVER", "HB_ADMIN"] }, isActive: true },
@@ -25,6 +25,7 @@ export default async function RfqSettingsPage() {
       orderBy: { email: "asc" },
     }),
     systemSender(),
+    prisma.legalEntity.findMany({ where: { isActive: true }, orderBy: { code: "asc" } }),
   ]);
   const tiers = settings.standardTiers.length ? settings.standardTiers.map((t) => Number(t)) : DEFAULT_TIERS;
 
@@ -61,6 +62,7 @@ export default async function RfqSettingsPage() {
       <Panel title="Email and defaults">
         <RfqSettingsForm
           fallbackFrom={process.env.EMAIL_FROM ?? ""}
+          legalEntities={legalEntities.map((le) => ({ code: le.code, name: le.name }))}
           values={{
             fromName: settings.fromName,
             fromEmail: settings.fromEmail ?? "",
@@ -68,6 +70,8 @@ export default async function RfqSettingsPage() {
             ccEmails: settings.ccEmails.join(", "),
             standardTiers: tiers.join(", "),
             defaultIncoterm: settings.defaultIncoterm ?? "",
+            defaultUnit: settings.defaultUnit,
+            defaultLegalEntity: settings.defaultLegalEntity ?? "",
           }}
         />
       </Panel>

@@ -8,6 +8,7 @@ import type { ActionState } from "@/app/actions/agreements";
 export function RfqSettingsForm({
   values,
   fallbackFrom,
+  legalEntities,
 }: {
   values: {
     fromName: string;
@@ -15,9 +16,12 @@ export function RfqSettingsForm({
     replyTo: string;
     ccEmails: string;
     standardTiers: string;
+    defaultUnit: string;
+    defaultLegalEntity: string;
     defaultIncoterm: string;
   };
   fallbackFrom: string;
+  legalEntities: { code: string; name: string }[];
 }) {
   const [state, formAction] = useActionState<ActionState, FormData>(saveRfqSettingsAction, null);
 
@@ -63,7 +67,7 @@ export function RfqSettingsForm({
 
       <div className="border-t border-line pt-5">
         <p className="eyebrow">Defaults when raising an RFQ</p>
-        <div className="mt-4 grid gap-5 md:grid-cols-2">
+        <div className="mt-4 grid gap-5 md:grid-cols-3">
           <div className="md:col-span-2">
             <label className="field-label" htmlFor="standardTiers">Standard quantity breaks</label>
             <input id="standardTiers" name="standardTiers" className="input" defaultValue={values.standardTiers} />
@@ -74,6 +78,28 @@ export function RfqSettingsForm({
           <div>
             <label className="field-label" htmlFor="defaultIncoterm">Incoterm</label>
             <input id="defaultIncoterm" name="defaultIncoterm" className="input" defaultValue={values.defaultIncoterm} placeholder="DDP" />
+          </div>
+          <div>
+            <label className="field-label" htmlFor="defaultLegalEntity">Legal entity</label>
+            <select
+              id="defaultLegalEntity"
+              name="defaultLegalEntity"
+              className="input"
+              defaultValue={values.defaultLegalEntity}
+            >
+              {legalEntities.length === 0 ? <option value="">None configured</option> : null}
+              {legalEntities.map((le) => (
+                <option key={le.code} value={le.code}>{le.code.toUpperCase()} . {le.name}</option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-charcoal/55">
+              Every RFQ is raised against this. Buyers are not asked, so it is one less thing to get wrong.
+            </p>
+          </div>
+          <div>
+            <label className="field-label" htmlFor="defaultUnit">Unit</label>
+            <input id="defaultUnit" name="defaultUnit" className="input" defaultValue={values.defaultUnit} placeholder="PCS" />
+            <p className="mt-1 text-xs text-charcoal/55">Applied to every quantity on every RFQ.</p>
           </div>
         </div>
       </div>

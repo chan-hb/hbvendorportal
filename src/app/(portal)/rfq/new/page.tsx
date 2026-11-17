@@ -43,6 +43,8 @@ export default async function NewRfqPage() {
           localItems={localItems}
           standardTiers={standardTiers}
           defaultIncoterm={settings.defaultIncoterm}
+          defaultUnit={settings.defaultUnit}
+          defaultLegalEntity={settings.defaultLegalEntity ?? legalEntities[0]?.code ?? null}
         />
       </Panel>
     </div>

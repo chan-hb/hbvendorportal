@@ -15,12 +15,16 @@ export function RfqForm({
   localItems,
   standardTiers,
   defaultIncoterm,
+  defaultUnit,
+  defaultLegalEntity,
 }: {
   action: (state: ActionState, formData: FormData) => Promise<ActionState>;
   legalEntities: { code: string; name: string; currency: string | null }[];
   localItems: LocalItem[];
   standardTiers: number[];
   defaultIncoterm?: string | null;
+  defaultUnit: string;
+  defaultLegalEntity: string | null;
 }) {
   const [state, formAction] = useActionState(action, null);
   const [vendorType, setVendorType] = useState<RfqVendorType>("CM");
@@ -56,7 +60,10 @@ export function RfqForm({
       {state?.error ? <p className="alert-error">{state.error}</p> : null}
 
       <p className="text-xs text-charcoal/55">
-        Fields marked <span className="text-pink">*</span> are required.
+        Fields marked <span className="text-pink">*</span> are required. Raised against{" "}
+        <span className="font-semibold text-charcoal">{(defaultLegalEntity ?? "no entity set").toUpperCase()}</span>{" "}
+        in <span className="font-semibold text-charcoal">{defaultUnit}</span>, which is set on the RFQ settings
+        page.
       </p>
 
       <div>
@@ -156,14 +163,18 @@ export function RfqForm({
           drive the capacity score. */}
       <div className="grid gap-5 md:grid-cols-2">
         <div>
-          <label className="field-label field-label-required" htmlFor="launchQuantity">Launch quantity</label>
+          <label className="field-label field-label-required" htmlFor="launchQuantity">
+            Launch quantity ({defaultUnit})
+          </label>
           <input id="launchQuantity" name="launchQuantity" type="number" step="1" min="1" className="input" required />
           <p className="mt-1 text-xs text-charcoal/55">
             The first order. Suppliers are compared on their price at this volume.
           </p>
         </div>
         <div>
-          <label className="field-label field-label-required" htmlFor="fullYearQuantity">Full year quantity</label>
+          <label className="field-label field-label-required" htmlFor="fullYearQuantity">
+            Full year quantity ({defaultUnit})
+          </label>
           <input id="fullYearQuantity" name="fullYearQuantity" type="number" step="1" min="1" className="input" required />
           <p className="mt-1 text-xs text-charcoal/55">
             What the year is worth. Used to check a supplier could actually sustain it.
@@ -232,24 +243,12 @@ export function RfqForm({
 
       <div className="grid gap-5 md:grid-cols-2">
         <div>
-          <label className="field-label field-label-required" htmlFor="dataAreaId">Legal entity</label>
-          <select id="dataAreaId" name="dataAreaId" className="input" required>
-            {legalEntities.map((le) => (
-              <option key={le.code} value={le.code}>{le.code.toUpperCase()} . {le.name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
           <label className="field-label field-label-required" htmlFor="currency">Currency</label>
           <select id="currency" name="currency" className="input" required>
             {Array.from(new Set([...legalEntities.map((l) => l.currency).filter(Boolean) as string[], "USD", "AED", "EUR", "GBP"])).map(
               (c) => <option key={c} value={c}>{c}</option>,
             )}
           </select>
-        </div>
-        <div>
-          <label className="field-label" htmlFor="unit">Unit</label>
-          <input id="unit" name="unit" className="input" placeholder="PCS" />
         </div>
         <div>
           <label className="field-label field-label-required" htmlFor="closesAt">Quotations close</label>

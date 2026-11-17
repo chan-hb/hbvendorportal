@@ -398,6 +398,11 @@ model RfqSetting {
 
   defaultIncoterm String?
 
+  // Fixed on every RFQ rather than asked each time. Held here rather than in
+  // code so they can change without a deployment.
+  defaultUnit        String  @default("PCS")
+  defaultLegalEntity String?
+
   updatedAt DateTime @updatedAt
   updatedBy String?
 }

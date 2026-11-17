@@ -86,7 +86,6 @@ export async function linkLocalItemAction(_prev: ActionState, formData: FormData
 const rfqSchema = z
   .object({
     title: z.string().min(3, "Give the RFQ a title"),
-    dataAreaId: z.string().min(1, "Choose a legal entity"),
     currency: z.string().length(3).toUpperCase(),
     vendorType: z.enum(["CM", "PRIMARY_PACK", "SECONDARY_PACK", "LABELS"]),
     itemSource: z.enum(["ERP", "LOCAL"]),
@@ -100,7 +99,6 @@ const rfqSchema = z
       .number()
       .int("Full year quantity must be a whole number")
       .positive("Full year quantity must be greater than zero"),
-    unit: z.string().optional(),
     goodsReadyDate: z.string().optional(),
     closesAt: z.coerce.date(),
     notes: z.string().optional(),
@@ -135,10 +133,26 @@ export async function createRfqAction(_prev: ActionState, formData: FormData): P
 
   const goodsReady = parsed.data.goodsReadyDate ? new Date(parsed.data.goodsReadyDate) : null;
 
+  // Both come from settings rather than the form, so every RFQ is consistent
+  // and a change is one edit rather than a retraining exercise.
+  const settings = await getRfqSettings();
+  const legalEntity =
+    settings.defaultLegalEntity ??
+    (await prisma.legalEntity.findFirst({ where: { isActive: true }, orderBy: { code: "asc" } }))?.code;
+
+  if (!legalEntity) {
+    return {
+      error:
+        "No legal entity is configured. Set one on the RFQ settings page, or add legal entities on the integration page first.",
+    };
+  }
+
   try {
     const me = await actor();
     const rfq = await createRfq(me, {
       ...parsed.data,
+      dataAreaId: legalEntity,
+      unit: settings.defaultUnit || undefined,
       quantityTiers: tiers,
       goodsReadyDate: goodsReady && !Number.isNaN(goodsReady.getTime()) ? goodsReady : null,
     });
@@ -426,6 +440,8 @@ export async function saveRfqSettingsAction(_prev: ActionState, formData: FormDa
           .filter((e) => e.includes("@")),
         standardTiers: tiers,
         defaultIncoterm: String(formData.get("defaultIncoterm") ?? "").trim() || null,
+        defaultUnit: String(formData.get("defaultUnit") ?? "").trim() || "PCS",
+        defaultLegalEntity: String(formData.get("defaultLegalEntity") ?? "").trim().toLowerCase() || null,
         updatedBy: me.email,
       },
     });
