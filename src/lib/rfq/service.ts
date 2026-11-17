@@ -225,11 +225,11 @@ export async function submitBid(
     {
       samplingLeadTimeDays: terms.samplingLeadTimeDays ?? null,
       leadTimeDays: terms.leadTimeDays ?? null,
-      weeklyCapacity: (terms.weeklyCapacity ?? null) as never,
-      moq: (terms.moq ?? null) as never,
+      weeklyCapacity: terms.weeklyCapacity ?? null,
+      moq: terms.moq ?? null,
       paymentTermsDays: terms.paymentTermsDays ?? null,
     },
-    lines.map((l) => ({ quantity: l.quantity as never, unitPrice: l.unitPrice as never })),
+    lines.map((l) => ({ quantity: l.quantity, unitPrice: l.unitPrice as never })),
     rfq,
   );
 

@@ -236,7 +236,7 @@ export function BidForm({
                 id="weeklyCapacity"
                 name="weeklyCapacity"
                 type="number"
-                step="0.0001"
+                step="1"
                 min="0"
                 className="input"
                 value={weeklyCapacity}
@@ -251,7 +251,7 @@ export function BidForm({
                 id="moq"
                 name="moq"
                 type="number"
-                step="0.0001"
+                step="1"
                 min="0"
                 className="input"
                 required

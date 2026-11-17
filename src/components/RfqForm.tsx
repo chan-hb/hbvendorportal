@@ -157,14 +157,14 @@ export function RfqForm({
       <div className="grid gap-5 md:grid-cols-2">
         <div>
           <label className="field-label field-label-required" htmlFor="launchQuantity">Launch quantity</label>
-          <input id="launchQuantity" name="launchQuantity" type="number" step="0.0001" min="0" className="input" required />
+          <input id="launchQuantity" name="launchQuantity" type="number" step="1" min="1" className="input" required />
           <p className="mt-1 text-xs text-charcoal/55">
             The first order. Suppliers are compared on their price at this volume.
           </p>
         </div>
         <div>
           <label className="field-label field-label-required" htmlFor="fullYearQuantity">Full year quantity</label>
-          <input id="fullYearQuantity" name="fullYearQuantity" type="number" step="0.0001" min="0" className="input" required />
+          <input id="fullYearQuantity" name="fullYearQuantity" type="number" step="1" min="1" className="input" required />
           <p className="mt-1 text-xs text-charcoal/55">
             What the year is worth. Used to check a supplier could actually sustain it.
           </p>
@@ -210,6 +210,7 @@ export function RfqForm({
               onChange={(e) => setCustomTier(e.target.value)}
               placeholder="750000"
               inputMode="numeric"
+              pattern="[0-9,]*"
             />
           </div>
           <button
@@ -217,7 +218,7 @@ export function RfqForm({
             className="btn-ghost"
             onClick={() => {
               const n = Number(customTier.replace(/[, ]/g, ""));
-              if (Number.isFinite(n) && n > 0) {
+              if (Number.isInteger(n) && n > 0) {
                 setTiers((t) => Array.from(new Set([...t, n])).sort((a, b) => a - b));
                 setCustomTier("");
               }

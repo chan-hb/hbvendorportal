@@ -92,8 +92,14 @@ const rfqSchema = z
     itemSource: z.enum(["ERP", "LOCAL"]),
     itemNumber: z.string().optional(),
     localItemId: z.string().optional(),
-    launchQuantity: z.coerce.number().positive("Launch quantity must be greater than zero"),
-    fullYearQuantity: z.coerce.number().positive("Full year quantity must be greater than zero"),
+    launchQuantity: z.coerce
+      .number()
+      .int("Launch quantity must be a whole number")
+      .positive("Launch quantity must be greater than zero"),
+    fullYearQuantity: z.coerce
+      .number()
+      .int("Full year quantity must be a whole number")
+      .positive("Full year quantity must be greater than zero"),
     unit: z.string().optional(),
     goodsReadyDate: z.string().optional(),
     closesAt: z.coerce.date(),
@@ -123,6 +129,9 @@ export async function createRfqAction(_prev: ActionState, formData: FormData): P
     .filter((n) => Number.isFinite(n) && n > 0)
     .sort((a, b) => a - b);
   if (tiers.length === 0) return { error: "Choose at least one quantity break to be priced" };
+  if (tiers.some((t) => !Number.isInteger(t))) {
+    return { error: "Quantity breaks must be whole numbers" };
+  }
 
   const goodsReady = parsed.data.goodsReadyDate ? new Date(parsed.data.goodsReadyDate) : null;
 
@@ -224,6 +233,7 @@ export async function submitBidAction(_prev: ActionState, formData: FormData): P
     const unitPrice = Number(prices[i]);
 
     if (!(quantity > 0)) return { error: `Row ${i + 1}: quantity must be greater than zero` };
+    if (!Number.isInteger(quantity)) return { error: `Row ${i + 1}: quantity must be a whole number` };
     if (!(unitPrice > 0)) return { error: `Row ${i + 1}: price must be greater than zero` };
     if (seen.has(quantity)) return { error: `Quantity ${quantity.toLocaleString()} is priced twice` };
     seen.add(quantity);
@@ -237,6 +247,20 @@ export async function submitBidAction(_prev: ActionState, formData: FormData): P
     const n = Number(raw);
     return Number.isFinite(n) && n >= 0 ? n : null;
   };
+
+  // Quantities are whole units, so a decimal is rejected rather than rounded.
+  // Rounding somebody's minimum order quietly would be worse than refusing it.
+  const wholeNum = (key: string, label: string) => {
+    const n = num(key);
+    if (n === null) return { value: null as number | null, error: null as string | null };
+    if (!Number.isInteger(n)) return { value: null, error: `${label} must be a whole number` };
+    return { value: n, error: null };
+  };
+
+  const moqInput = wholeNum("moq", "Minimum order quantity");
+  const capacityInput = wholeNum("weeklyCapacity", "Weekly capacity");
+  if (moqInput.error) return { error: moqInput.error };
+  if (capacityInput.error) return { error: capacityInput.error };
   const date = (key: string) => {
     const raw = String(formData.get(key) ?? "").trim();
     if (!raw) return null;
@@ -260,8 +284,8 @@ export async function submitBidAction(_prev: ActionState, formData: FormData): P
         validUntil: date("validUntil"),
         samplingLeadTimeDays: num("samplingLeadTimeDays"),
         leadTimeDays: num("leadTimeDays"),
-        weeklyCapacity: num("weeklyCapacity"),
-        moq: num("moq"),
+        weeklyCapacity: capacityInput.value,
+        moq: moqInput.value,
         paymentTermsDays: num("paymentTermsDays"),
         incoterm: String(formData.get("incoterm") ?? "") || undefined,
         notes: String(formData.get("notes") ?? "") || undefined,
@@ -385,7 +409,7 @@ export async function saveRfqSettingsAction(_prev: ActionState, formData: FormDa
   const tiers = String(formData.get("standardTiers") ?? "")
     .split(",")
     .map((t) => Number(t.trim().replace(/[, ]/g, "")))
-    .filter((n) => Number.isFinite(n) && n > 0)
+    .filter((n) => Number.isInteger(n) && n > 0)
     .sort((a, b) => a - b);
 
   try {

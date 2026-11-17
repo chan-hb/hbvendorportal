@@ -394,7 +394,7 @@ model RfqSetting {
   useRfqOwnerAsSender Boolean @default(true)
 
   // Offered as tick boxes when raising an RFQ.
-  standardTiers Decimal[] @db.Decimal(18, 4)
+  standardTiers Int[]
 
   defaultIncoterm String?
 
@@ -535,13 +535,16 @@ model Rfq {
   // Purchasing enters both. Launch is the volume being committed to now; full
   // year is what the relationship is worth, which is what a supplier needs in
   // order to judge whether they can service it.
-  launchQuantity  Decimal @db.Decimal(18, 4)
-  fullYearQuantity Decimal @db.Decimal(18, 4)
+  //
+  // Whole units throughout: you cannot order half a carton, and a fractional
+  // quantity on a price break makes the ranges read as nonsense.
+  launchQuantity   Int
+  fullYearQuantity Int
   unit            String?
 
   // Tiers the buyer wants priced, e.g. [5000, 10000, 25000]. Suppliers return
   // a price against each, which is how volume pricing is actually negotiated.
-  quantityTiers Decimal[] @db.Decimal(18, 4)
+  quantityTiers Int[]
 
   // When the supplier must have the goods finished and ready. Context for the
   // supplier rather than a scored field.
@@ -667,8 +670,8 @@ model Bid {
   // before production starts. Captured and shown, deliberately not scored.
   samplingLeadTimeDays Int?
   leadTimeDays         Int?
-  weeklyCapacity Decimal? @db.Decimal(18, 4)
-  moq            Decimal? @db.Decimal(18, 4)
+  weeklyCapacity Int?
+  moq            Int?
   // Days from invoice. A number rather than free text, so quotations can be
   // compared and the figure can be read by anything downstream.
   paymentTermsDays Int?
@@ -680,7 +683,7 @@ model Bid {
 
   // Denormalised roll-ups of the tranche lines, maintained on save so that
   // comparison and scoring do not have to aggregate on every read.
-  totalQuantity    Decimal? @db.Decimal(18, 4)
+  totalQuantity    Int?
   weightedAvgPrice Decimal? @db.Decimal(18, 6)
   // Price at the RFQ's target quantity, or the nearest tier below it. This is
   // the number a buyer compares on.
@@ -781,7 +784,7 @@ model BidLine {
   bid    Bid    @relation(fields: [bidId], references: [id], onDelete: Cascade)
   lineNo Int
 
-  quantity  Decimal @db.Decimal(18, 4)
+  quantity  Int
   unitPrice Decimal @db.Decimal(18, 6)
   notes     String?
 
