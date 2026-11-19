@@ -34,6 +34,7 @@ export default async function PortalLayout({
           { href: "/admin/vendors", label: "Vendors" },
           { href: "/admin/users", label: "Users" },
           { href: "/admin/integration", label: "Integration" },
+          { href: "/admin/analytics", label: "Analytics" },
         ]
       : []),
   ];
