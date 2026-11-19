@@ -35,6 +35,9 @@ export const integrationInput = z.object({
   itemEntity: z.string().min(1),
   tradeAgreementEntity: z.string().min(1),
   pushEntity: z.string().min(1),
+  poHeaderEntity: z.string().min(1),
+  poLineEntity: z.string().min(1),
+  poReceiptEntity: z.string().min(1),
   legalEntities: z.string(), // comma separated in the form
   pageSize: z.coerce.number().int().min(100).max(10000),
   incrementalEnabled: z.coerce.boolean(),

@@ -124,6 +124,27 @@ locally and fails on deploy. Cost parameters are stored with each hash so they c
 Twelve character minimum, no composition rules. Length helps; symbol requirements mostly produce
 predictable substitutions and get written on notes.
 
+### Vendor purchase orders are read live at sign-in, not synced
+
+A vendor sees their open purchase orders, their last ten, and delivered quantity over time on
+`/purchase-orders`. The data comes from D365 each time they sign in (and when they open the page,
+if the last pull is over fifteen minutes old), rather than from the nightly sync. Per vendor it is
+small, two years of orders at most, so it is pulled whole and swapped in. No checkpoints needed.
+
+Three entities, all configurable on the integration page: `PurchaseOrderHeadersV2` for which orders
+belong to the vendor, `PurchaseOrderLinesV2` for SKU, name and quantity, and `ProductReceiptLinesV2`
+for delivered quantity. The standard line entity has **no delivered quantity**, which is why receipts
+are read at all. They also carry the real receipt date, so the chart shows when goods actually
+arrived rather than when they were due.
+
+**PO numbers are only unique within a company.** Some entities use a plain `PO000nnnn` sequence, so
+every match is on `dataAreaId` and number together.
+
+Only SKU, name, ordered quantity and delivered quantity are kept per line, with the order number,
+date and status needed to group them. Fill rate counts completed orders only; open orders are mostly
+not due yet and would read as under-delivery that has not happened. Lines with no item number
+(services, procurement categories) are left out.
+
 ---
 
 ## Things that will catch you out
