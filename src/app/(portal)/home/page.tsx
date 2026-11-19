@@ -5,8 +5,8 @@ import { PurchaseOrdersView } from "@/components/PurchaseOrdersView";
 
 export const dynamic = "force-dynamic";
 
-/** Vendor only. Huda Beauty staff see purchase orders in D365 itself. */
-export default async function PurchaseOrdersPage() {
+/** Vendor Home: their purchase orders. Vendor only; staff land on the dashboard. */
+export default async function HomePage() {
   const user = await requireVendor();
 
   const [data, state] = await Promise.all([

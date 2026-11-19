@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Shown while purchase orders are being read from D365.
+ * Shown while purchase orders are being refreshed.
  *
  * A field of bars that breathes on its own and leans towards the pointer, with
  * a ripple on click or tap. The steps underneath are the real stages reported
@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
  */
 
 const STAGES: { key: string; label: string }[] = [
-  { key: "connecting", label: "Connecting to Dynamics 365" },
+  { key: "connecting", label: "Connecting" },
   { key: "headers", label: "Finding your purchase orders" },
   { key: "lines", label: "Reading order lines" },
   { key: "receipts", label: "Matching deliveries" },
@@ -83,7 +83,7 @@ export function PoLoadingVisual({ stage, startedAt }: { stage: string | null; st
   return (
     <div className="panel p-6 sm:p-8" role="status" aria-live="polite">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="eyebrow">Refreshing from Dynamics 365</p>
+        <p className="eyebrow">Refreshing your orders</p>
         <p className="text-xs tabular-nums text-charcoal/55">{elapsed}s</p>
       </div>
       <p className="mt-2 text-sm text-charcoal/70">

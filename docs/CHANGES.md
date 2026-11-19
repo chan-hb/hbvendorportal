@@ -126,8 +126,12 @@ predictable substitutions and get written on notes.
 
 ### Vendor purchase orders are read live at sign-in, not synced
 
-A vendor sees their open purchase orders, their last ten, and delivered quantity over time on
-`/purchase-orders`. The data comes from D365 each time they sign in (and when they open the page,
+A vendor lands on `/home` after signing in (the nav calls it Home). It shows their open purchase
+orders and their completed ones (received or invoiced, never open or cancelled), each paginated ten
+to a page, plus delivered quantity over time. `/purchase-orders` redirects there. Vendor-facing
+pages do not name Dynamics 365; staff-only pages still do.
+
+The data comes from D365 each time they sign in (and when they open the page,
 if the last pull is over fifteen minutes old), rather than from the nightly sync. Per vendor it is
 small, two years of orders at most, so it is pulled whole and swapped in. No checkpoints needed.
 

@@ -17,7 +17,7 @@ export default async function PortalLayout({
 
   const nav = [
     ...(internal ? [{ href: "/dashboard", label: "Dashboard" }] : []),
-    ...(user.role === "VENDOR" && user.vendorId ? [{ href: "/purchase-orders", label: "Purchase orders" }] : []),
+    ...(user.role === "VENDOR" && user.vendorId ? [{ href: "/home", label: "Home" }] : []),
     { href: "/agreements", label: internal ? "All agreements" : "My agreements" },
     { href: "/rfq", label: internal ? "RFQs" : "Invitations to quote" },
     { href: "/price-history", label: "Price history" },

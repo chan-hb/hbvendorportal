@@ -27,24 +27,24 @@ export async function requireCurrentPassword(pathname: string) {
 
 export async function requireInternal() {
   const user = await requireUser();
-  if (!isInternal(user.role)) redirect("/agreements");
+  if (!isInternal(user.role)) redirect("/");
   return user;
 }
 
 export async function requireApprover() {
   const user = await requireUser();
-  if (!canApprove(user.role)) redirect("/agreements");
+  if (!canApprove(user.role)) redirect("/");
   return user;
 }
 
 export async function requireAdmin() {
   const user = await requireUser();
-  if (!canAdminister(user.role)) redirect("/agreements");
+  if (!canAdminister(user.role)) redirect("/");
   return user;
 }
 
 export async function requireVendor() {
   const user = await requireUser();
-  if (user.role !== "VENDOR" || !user.vendorId) redirect("/agreements");
+  if (user.role !== "VENDOR" || !user.vendorId) redirect(user.role === "VENDOR" ? "/agreements" : "/");
   return { ...user, vendorId: user.vendorId as string };
 }

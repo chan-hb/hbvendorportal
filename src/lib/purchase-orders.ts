@@ -29,7 +29,8 @@ export type SkuPoint = { itemNumber: string; itemName: string | null; ordered: n
 
 export type PurchaseOrderData = {
   openOrders: PoView[];
-  recentOrders: PoView[];
+  /** Received or invoiced. Open and cancelled orders are left out. */
+  completedOrders: PoView[];
   monthly: MonthPoint[];
   topSkus: SkuPoint[];
   kpis: {
@@ -94,7 +95,7 @@ export async function vendorPurchaseOrders(vendorId: string): Promise<PurchaseOr
 
   const all = [...orders.values()];
   const openOrders = all.filter((o) => o.status === "OPEN");
-  const recentOrders = all.slice(0, 10);
+  const completedOrders = all.filter((o) => o.status === "RECEIVED" || o.status === "INVOICED");
 
   // Monthly: ordered by order month, delivered by receipt month. Cancelled
   // orders never turn into deliveries, so they are left out of "ordered" too.
@@ -137,7 +138,7 @@ export async function vendorPurchaseOrders(vendorId: string): Promise<PurchaseOr
 
   return {
     openOrders,
-    recentOrders,
+    completedOrders,
     monthly: [...series.values()],
     topSkus,
     kpis: {

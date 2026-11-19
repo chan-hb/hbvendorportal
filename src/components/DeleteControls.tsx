@@ -126,9 +126,9 @@ export function DeleteAgreement({
         description="Removes the request and its approval history."
         blockedReason={
           erpCreated
-            ? `This has been created in Dynamics 365${
+            ? `This price is already live${
                 erpRecordId ? ` as ${erpRecordId}` : ""
-              }. Deleting it here would not remove the price from the ERP, and the two would then disagree.`
+              }. Deleting it here would not remove the live price, and the two would then disagree.`
             : null
         }
       />
