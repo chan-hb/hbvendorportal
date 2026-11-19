@@ -80,7 +80,7 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
           and what Dynamics 365 currently holds. */}
       <nav className="flex gap-2">
         <Tab href="/agreements" label="Portal requests" active={view === "requests"} />
-        <Tab href="/agreements?view=current" label="Current in Dynamics 365" active={view === "current"} />
+        <Tab href="/agreements?view=current" label="Current prices" active={view === "current"} />
       </nav>
 
       <form className="panel grid gap-4 p-5 md:grid-cols-3 xl:grid-cols-6">
@@ -229,7 +229,7 @@ export default async function AgreementsPage({ searchParams }: { searchParams: P
       ) : (
         <Panel
           title="Live trade agreements"
-          subtitle="Read only mirror of Dynamics 365, refreshed by the daily sync"
+          subtitle="Prices currently in effect, refreshed daily"
         >
           {current!.rows.length === 0 ? (
             <EmptyState

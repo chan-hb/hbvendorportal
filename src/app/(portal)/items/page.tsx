@@ -51,7 +51,7 @@ export default async function ItemsPage({
   return (
     <div className="space-y-6">
       <div>
-        <p className="eyebrow">Dynamics 365 master data</p>
+        <p className="eyebrow">Master data</p>
         <h1 className="page-title mt-2">Item master</h1>
         <p className="mt-1 text-sm text-charcoal/60">
           Read only mirror of released products and their current trade agreements.

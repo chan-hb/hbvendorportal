@@ -29,7 +29,7 @@ export default async function NewAgreementPage() {
         <h1 className="page-title mt-2">New trade agreement</h1>
         <p className="mt-2 text-sm text-charcoal/60">
           Pick the item, set the price and the date it takes effect. A Huda Beauty approver reviews it before
-          anything reaches Dynamics 365.
+          it takes effect.
         </p>
       </div>
 

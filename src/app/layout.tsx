@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Huda Beauty | Vendor portal",
-  description: "Trade agreements, requests for quotation and vendor collaboration for Dynamics 365.",
+  description: "Trade agreements, requests for quotation and purchase orders for Huda Beauty suppliers.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

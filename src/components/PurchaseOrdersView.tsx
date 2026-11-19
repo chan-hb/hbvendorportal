@@ -17,6 +17,7 @@ export type RefreshState = {
 };
 
 const POLL_MS = 1500;
+const PAGE_SIZE = 10;
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   OPEN: { label: "Open", className: "state-pending" },
@@ -92,11 +93,10 @@ export function PurchaseOrdersView({ data, initial }: { data: PurchaseOrderData;
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="eyebrow">Orders</p>
+          <p className="eyebrow">Home</p>
           <h1 className="page-title mt-2">Purchase orders</h1>
           <p className="mt-1 text-sm text-charcoal/60">
-            Your purchase orders from Huda Beauty over the last two years, refreshed from Dynamics 365 each time you
-            sign in.
+            Your purchase orders from Huda Beauty over the last two years, refreshed each time you sign in.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -109,7 +109,7 @@ export function PurchaseOrdersView({ data, initial }: { data: PurchaseOrderData;
 
       {state.status === "FAILED" ? (
         <p className="alert-error">
-          The last refresh from Dynamics 365 did not complete
+          The last refresh did not complete
           {data.hasData ? ", so what you see below may be out of date" : ""}. Try again in a few minutes, and contact
           your Huda Beauty buyer if it keeps happening.
         </p>
@@ -167,15 +167,15 @@ function Loaded({ data }: { data: PurchaseOrderData }) {
 
       <OrdersTable
         title="Open purchase orders"
-        subtitle="Orders still awaiting delivery in full. Select an order to see its lines."
+        subtitle="Orders still awaiting delivery in full, newest first. Select an order to see its lines."
         orders={data.openOrders}
         empty="No open purchase orders right now."
       />
       <OrdersTable
-        title="Last 10 purchase orders"
-        subtitle="Your most recent orders, whatever their status."
-        orders={data.recentOrders}
-        empty="No purchase orders in the last two years."
+        title="Completed purchase orders"
+        subtitle="Received and invoiced orders, newest first. Open and cancelled orders are not shown here."
+        orders={data.completedOrders}
+        empty="No completed purchase orders in the last two years."
         showStatus
       />
     </>
@@ -206,6 +206,15 @@ function OrdersTable({
   showStatus?: boolean;
 }) {
   const [open, setOpen] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(0);
+  const pageCount = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
+  // A refresh can shrink the list; never sit on a page that no longer exists.
+  const current = Math.min(page, pageCount - 1);
+  const visible = orders.slice(current * PAGE_SIZE, current * PAGE_SIZE + PAGE_SIZE);
+  const goTo = (p: number) => {
+    setPage(Math.min(pageCount - 1, Math.max(0, p)));
+    setOpen(new Set());
+  };
   const toggle = (key: string) =>
     setOpen((prev) => {
       const next = new Set(prev);
@@ -238,7 +247,7 @@ function OrdersTable({
               </tr>
             </thead>
             <tbody>
-              {orders.map((o) => {
+              {visible.map((o) => {
                 const expanded = open.has(o.key);
                 const pct = o.orderedQty > 0 ? Math.min(100, (o.deliveredQty / o.orderedQty) * 100) : 0;
                 const badge = STATUS_BADGE[o.status] ?? STATUS_BADGE.OPEN;
@@ -320,8 +329,52 @@ function OrdersTable({
               })}
             </tbody>
           </table>
+          {pageCount > 1 ? (
+            <Pager page={current} pageCount={pageCount} total={orders.length} onChange={goTo} />
+          ) : null}
         </div>
       )}
     </section>
+  );
+}
+
+function Pager({
+  page,
+  pageCount,
+  total,
+  onChange,
+}: {
+  page: number;
+  pageCount: number;
+  total: number;
+  onChange: (page: number) => void;
+}) {
+  const from = page * PAGE_SIZE + 1;
+  const to = Math.min(total, from + PAGE_SIZE - 1);
+  return (
+    <nav
+      className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3"
+      aria-label="Pages"
+    >
+      <p className="text-xs tabular-nums text-charcoal/60">
+        Showing {from} to {to} of {total}
+      </p>
+      <div className="flex items-center gap-3">
+        <button type="button" className="btn-ghost px-4 py-1.5" disabled={page === 0} onClick={() => onChange(page - 1)}>
+          Previous
+        </button>
+        <span className="text-xs tabular-nums text-charcoal/70">
+          Page {page + 1} of {pageCount}
+        </span>
+        <button
+          type="button"
+          className="btn-ghost px-4 py-1.5"
+          disabled={page >= pageCount - 1}
+          onClick={() => onChange(page + 1)}
+        >
+          Next
+        </button>
+      </div>
+    </nav>
   );
 }

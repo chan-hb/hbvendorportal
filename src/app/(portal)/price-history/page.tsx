@@ -26,7 +26,7 @@ export default async function PriceHistoryPage({
         <p className="eyebrow">Trade agreements</p>
         <h1 className="page-title mt-2">Price history</h1>
         <p className="mt-1 text-sm text-charcoal/60">
-          Every price on record, from Dynamics 365 and from decided portal requests, in one chronology. The change
+          Every price on record, current prices and decided portal requests, in one chronology. The change
           column compares each price with the one it replaced for that item, vendor and entity.
         </p>
       </div>
@@ -111,7 +111,7 @@ export default async function PriceHistoryPage({
                     <td className="td whitespace-nowrap">{shortDate(e.toDate)}</td>
                     <td className="td">
                       {e.source === "D365" ? (
-                        <span className="badge state-quiet">Dynamics 365</span>
+                        <span className="badge state-quiet">Price list</span>
                       ) : (
                         <span
                           className={`badge ${

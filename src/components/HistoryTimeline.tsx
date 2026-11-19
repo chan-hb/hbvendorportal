@@ -9,8 +9,8 @@ const ACTION_LABEL: Record<HistoryAction, string> = {
   REJECTED: "Rejected",
   CHANGE_REQUESTED: "Change requested",
   WITHDRAWN: "Withdrawn",
-  ERP_SYNC_SUCCEEDED: "Created in Dynamics 365",
-  ERP_SYNC_FAILED: "Dynamics 365 sync failed",
+  ERP_SYNC_SUCCEEDED: "Price made live",
+  ERP_SYNC_FAILED: "Price could not be made live",
 };
 
 const ACCENT: Partial<Record<HistoryAction, string>> = {
