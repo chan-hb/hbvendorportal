@@ -130,7 +130,8 @@ export function DecisionTime({ points, waitingDays }: { points: DecisionPoint[];
   if (values.length === 0) return <Empty>No decisions were made in this period.</Empty>;
 
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => f * max);
-  const labelEvery = Math.ceil(points.length / 7);
+  // About one date label per 80px, so a narrow column does not crowd them.
+  const labelEvery = Math.ceil(points.length / Math.max(3, Math.floor(W / 80)));
   const hovered = hover !== null ? points[hover] : null;
 
   return (
@@ -288,7 +289,7 @@ export function PriceRadar({ points, since, now }: { points: PricePoint[]; since
   const [hover, setHover] = useState<string | null>(null);
   const [side, setSide] = useState<Side>("all");
   const [asTable, setAsTable] = useState(false);
-  const [box, W] = useChartWidth<HTMLDivElement>(1100);
+  const [box, W] = useChartWidth<HTMLDivElement>(420);
 
   if (points.length === 0) {
     return <Empty>No price changes against a live price were submitted in this period.</Empty>;
@@ -299,17 +300,17 @@ export function PriceRadar({ points, since, now }: { points: PricePoint[]; since
   const downs = points.filter((p) => p.pct < 0);
   const avg = (xs: PricePoint[]) => (xs.length ? xs.reduce((t, p) => t + p.pct, 0) / xs.length : 0);
 
-  const H = 320;
-  const pad = { top: 16, right: 16, bottom: 28, left: 52 };
+  const H = 220;
+  const pad = { top: 10, right: 14, bottom: 26, left: 46 };
   const innerW = W - pad.left - pad.right;
   const innerH = H - pad.top - pad.bottom;
   const ext = niceMax(Math.max(5, ...points.map((p) => Math.abs(p.pct))));
   const x = (t: number) => pad.left + ((t - since) / Math.max(1, now - since)) * innerW;
   const y = (v: number) => pad.top + innerH / 2 - (Math.max(-ext, Math.min(ext, v)) / ext) * (innerH / 2);
-  const r = (p: PricePoint) => 4 + 6 * Math.sqrt(Math.min(1, Math.abs(p.pct) / ext));
+  const r = (p: PricePoint) => 3.5 + 3.5 * Math.sqrt(Math.min(1, Math.abs(p.pct) / ext));
   const color = (p: PricePoint) => (p.pct > 0 ? PINK : p.pct < 0 ? VIOLET : "#9A9396");
-  const xTicks = Array.from({ length: 5 }, (_, i) => since + ((now - since) * i) / 4);
-  const yTicks = [-ext, -ext / 2, 0, ext / 2, ext];
+  const xTicks = Array.from({ length: 3 }, (_, i) => since + ((now - since) * i) / 2);
+  const yTicks = [-ext, 0, ext];
   const hovered = points.find((p) => p.id === hover) ?? null;
   const open = (id: string) => router.push(`/agreements/${id}`);
 
@@ -321,32 +322,26 @@ export function PriceRadar({ points, since, now }: { points: PricePoint[]; since
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-4">
+        <div className="flex flex-wrap items-center gap-1.5">
           {filter("all", "All", points.length)}
           {filter("up", "Increases", ups.length)}
           {filter("down", "Decreases", downs.length)}
         </div>
-        <div className="flex items-center gap-4">
-          <Legend
-            items={[
-              { label: "Increase", color: PINK, round: true },
-              { label: "Decrease", color: VIOLET, round: true },
-            ]}
-          />
-          <TableToggle asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
-        </div>
+        <TableToggle asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
       </div>
-      <p className="px-5 pt-3 text-xs text-charcoal/60">
-        <span className="font-semibold text-charcoal">{ups.length}</span> increases averaging{" "}
-        <span className="font-semibold text-charcoal">{signedPct(avg(ups))}</span>,{" "}
-        <span className="font-semibold text-charcoal">{downs.length}</span> decreases averaging{" "}
-        <span className="font-semibold text-charcoal">{signedPct(avg(downs))}</span>. Compared with the live price at the
-        time of submission, same currency only. Select a dot to open the agreement.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-3 text-xs text-charcoal/60">
+        <Legend
+          items={[
+            { label: `Increase, avg ${signedPct(avg(ups))}`, color: PINK, round: true },
+            { label: `Decrease, avg ${signedPct(avg(downs))}`, color: VIOLET, round: true },
+          ]}
+        />
+        <span>Select a dot to open it</span>
+      </div>
 
       {asTable ? (
-        <div className="max-h-80 overflow-auto px-5 py-4">
+        <div className="max-h-64 overflow-auto px-5 py-4">
           <table className="w-full border-collapse">
             <thead className="border-b border-line bg-cloud/60">
               <tr>
@@ -388,11 +383,11 @@ export function PriceRadar({ points, since, now }: { points: PricePoint[]; since
           >
             <rect x={pad.left} y={pad.top} width={innerW} height={innerH / 2} fill="#FDF4F8" />
             <rect x={pad.left} y={pad.top + innerH / 2} width={innerW} height={innerH / 2} fill="#F7F3FB" />
-            <text x={pad.left + 8} y={pad.top + 14} fontSize={11} fill={AXIS_TEXT}>
-              Price increases
+            <text x={W - pad.right - 6} y={pad.top + 13} textAnchor="end" fontSize={10} fill={AXIS_TEXT}>
+              Up
             </text>
-            <text x={pad.left + 8} y={pad.top + innerH - 8} fontSize={11} fill={AXIS_TEXT}>
-              Price decreases
+            <text x={W - pad.right - 6} y={pad.top + innerH - 6} textAnchor="end" fontSize={10} fill={AXIS_TEXT}>
+              Down
             </text>
             {yTicks.map((t) => (
               <g key={t}>
