@@ -156,18 +156,19 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
           <Panel title="Approval funnel" subtitle="Where this period's submissions have got to">
             <ApprovalFunnel stages={approvals.funnel} outcomes={approvals.outcomes} />
           </Panel>
           <Panel title="Time to decision" subtitle="Median days from submission to approval, rejection or change request">
             <DecisionTime points={approvals.decisionTime} waitingDays={WAITING_DAYS} />
           </Panel>
+          <div className="lg:col-span-2 xl:col-span-1">
+            <Panel title="Price change radar" subtitle="Proposed price against the live price it would replace">
+              <PriceRadar points={approvals.prices} since={approvals.since} now={approvals.now} />
+            </Panel>
+          </div>
         </div>
-
-        <Panel title="Price change radar" subtitle="Each proposed price against the live price it would replace">
-          <PriceRadar points={approvals.prices} since={approvals.since} now={approvals.now} />
-        </Panel>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Panel title="Supplier response" subtitle="How invited suppliers answered, latest RFQs first">
