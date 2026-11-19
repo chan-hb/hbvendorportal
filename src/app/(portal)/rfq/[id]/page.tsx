@@ -185,8 +185,10 @@ export default async function RfqDetail({
     <div className="space-y-6">
       <Header rfq={rfq} itemLabel={itemLabel} />
 
-      <div className="grid gap-6 lg:grid-cols-[3fr_1fr]">
-        <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
+        {/* min-w-0 is what stops the wide comparison table from pushing the
+            sidebar to nothing. Without it the grid column sizes to its content. */}
+        <div className="min-w-0 space-y-6">
           <nav className="flex gap-2">
             <Tab href={`/rfq/${id}?tab=vendors`} label={`Vendors (${rfq.invitations.length})`} active={activeTab === "vendors"} />
             <Tab href={`/rfq/${id}?tab=compare`} label={`Comparison (${bids.length})`} active={activeTab === "compare"} />
@@ -368,18 +370,36 @@ export default async function RfqDetail({
           </Panel>
 
           <Panel title="Details">
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-4 p-5">
+            <dl className="space-y-4 p-5">
               <Field label="Item" value={itemLabel} />
-              <Field label="Entity" value={rfq.dataAreaId.toUpperCase()} />
-              <Field label="Launch quantity" value={`${Number(rfq.launchQuantity).toLocaleString()} ${rfq.unit ?? ""}`} />
-            <Field label="Full year quantity" value={`${Number(rfq.fullYearQuantity).toLocaleString()} ${rfq.unit ?? ""}`} />
-              <Field label="Currency" value={rfq.currency} />
-              <Field label="Closes" value={shortDate(rfq.closesAt)} />
+              <div className="grid grid-cols-2 gap-x-4">
+                <Field label="Entity" value={rfq.dataAreaId.toUpperCase()} />
+                <Field label="Currency" value={rfq.currency} />
+              </div>
+              <div className="grid grid-cols-2 gap-x-4">
+                <Field
+                  label="Launch"
+                  value={`${Number(rfq.launchQuantity).toLocaleString()} ${rfq.unit ?? ""}`.trim()}
+                />
+                <Field
+                  label="Full year"
+                  value={`${Number(rfq.fullYearQuantity).toLocaleString()} ${rfq.unit ?? ""}`.trim()}
+                />
+              </div>
               <Field label="Vendor type" value={VENDOR_TYPE_LABEL[rfq.vendorType]} />
+              {/* Shown as ranges, matching what the supplier was asked to price. */}
               <Field
-                label="Breaks"
-                value={rfq.quantityTiers.map((t) => Number(t).toLocaleString()).join(", ") || "None set"}
+                label="Price ranges"
+                value={
+                  rfq.quantityTiers.length
+                    ? rfq.quantityTiers.map((_, i) => bracketLabel(rfq.quantityTiers.map(Number), i)).join("  .  ")
+                    : "None set"
+                }
               />
+              <div className="grid grid-cols-2 gap-x-4">
+                <Field label="Closes" value={shortDate(rfq.closesAt)} />
+                <Field label="Goods ready" value={shortDate(rfq.goodsReadyDate)} />
+              </div>
               <Field label="Raised by" value={rfq.createdBy.email} />
               <Field
                 label="All bids alert"
@@ -449,9 +469,11 @@ function Tab({ href, label, active }: { href: string; label: string; active: boo
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="min-w-0">
       <dt className="field-label">{label}</dt>
-      <dd className="text-sm font-medium text-charcoal">{value}</dd>
+      {/* break-words so a long item name or email wraps instead of overflowing
+          the sidebar, which is narrow by design. */}
+      <dd className="break-words text-sm font-medium text-charcoal">{value}</dd>
     </div>
   );
 }

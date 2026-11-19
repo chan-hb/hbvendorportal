@@ -30,7 +30,7 @@ export function RfqAttachments({
               <div className="min-w-0">
                 <a
                   href={`/api/rfq/attachment?id=${a.id}`}
-                  className="text-sm font-medium text-pink hover:underline"
+                  className="block truncate text-sm font-medium text-pink hover:underline"
                 >
                   {a.filename}
                 </a>
@@ -59,10 +59,15 @@ export function RfqAttachments({
           {state?.ok ? <p className="text-sm text-[#2C6B44]">{state.ok}</p> : null}
           <div>
             <label className="field-label" htmlFor="brief">Add a file</label>
-            <input id="brief" name="brief" type="file" multiple className="input" />
-            <p className="mt-1 text-xs text-charcoal/55">
-              Up to 8 MB each. Files added now are not resent to vendors already invited, so tell them separately
-              if the brief has changed.
+            <input
+              id="brief"
+              name="brief"
+              type="file"
+              multiple
+              className="input w-full text-xs file:mr-3 file:rounded-pill file:border-0 file:bg-charcoal/10 file:px-3 file:py-1 file:text-[11px]"
+            />
+            <p className="mt-1 text-xs leading-relaxed text-charcoal/55">
+              Up to 8 MB each. Files added now are not resent to vendors already invited.
             </p>
           </div>
           <SubmitButton className="btn-ghost">Attach</SubmitButton>
