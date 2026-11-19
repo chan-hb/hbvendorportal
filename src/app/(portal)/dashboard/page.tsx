@@ -4,10 +4,15 @@ import { requireInternal } from "@/lib/session";
 import { dateTime, money, shortDate } from "@/lib/format";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Panel } from "@/components/Panel";
+import { WAITING_DAYS, approvalAnalytics, parseRange, rfqAnalytics } from "@/lib/analytics";
+import { KpiTile, RangeChips } from "@/components/analytics/kit";
+import { ApprovalFunnel, DecisionTime, PriceRadar } from "@/components/analytics/ApprovalCharts";
+import { QuoteSpread, ResponseRates } from "@/components/analytics/RfqCharts";
 
-export default async function Dashboard() {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<{ range?: string }> }) {
   await requireInternal();
   const now = new Date();
+  const range = parseRange((await searchParams).range);
 
   const [
     awaiting,
@@ -21,6 +26,8 @@ export default async function Dashboard() {
     recentAgreements,
     rfqsNeedingAttention,
     lastRuns,
+    approvals,
+    sourcing,
   ] = await Promise.all([
     prisma.agreement.count({ where: { status: "SUBMITTED" } }),
     prisma.agreement.count({ where: { status: "CHANGE_REQUESTED" } }),
@@ -62,7 +69,10 @@ export default async function Dashboard() {
       take: 6,
     }),
     prisma.syncRun.findMany({ orderBy: { startedAt: "desc" }, take: 4 }),
+    approvalAnalytics(range),
+    rfqAnalytics(range),
   ]);
+  const ak = approvals.kpis;
 
   const agreementTiles = [
     { label: "Awaiting approval", value: awaiting, href: "/agreements?status=SUBMITTED", accent: true },
@@ -107,6 +117,65 @@ export default async function Dashboard() {
           {agreementTiles.map((t) => (
             <Tile key={t.label} {...t} />
           ))}
+        </div>
+      </section>
+
+      <section id="insights" className="scroll-mt-6 space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 className="section-title">Insights</h2>
+            <p className="mt-1 text-xs text-charcoal/60">Select any bar, dot or row to open the records behind it.</p>
+          </div>
+          <RangeChips basePath="/dashboard" value={range} />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <KpiTile
+            label="Median time to decide"
+            value={ak.medianDecisionDays}
+            kind="days"
+            hint={`${ak.decisions} decisions in this period`}
+          />
+          <KpiTile
+            label={`Waiting over ${WAITING_DAYS} days`}
+            value={ak.waitingTooLong}
+            tone="alert"
+            hint={ak.waitingTooLong ? `Oldest has waited ${Math.floor(ak.oldestWaitingDays)} days` : "Nobody is waiting long"}
+            href="/agreements?status=SUBMITTED"
+          />
+          <KpiTile
+            label="Average price change"
+            value={ak.avgPriceChange}
+            kind="signedPct"
+            hint={`Across ${ak.priceChanges} submissions against a live price`}
+          />
+          <KpiTile
+            label="Supplier response rate"
+            value={sourcing.kpis.responseRate}
+            kind="pct"
+            hint={`${sourcing.kpis.invited} invitations across ${sourcing.kpis.rfqs} RFQs`}
+          />
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Panel title="Approval funnel" subtitle="Where this period's submissions have got to">
+            <ApprovalFunnel stages={approvals.funnel} outcomes={approvals.outcomes} />
+          </Panel>
+          <Panel title="Time to decision" subtitle="Median days from submission to approval, rejection or change request">
+            <DecisionTime points={approvals.decisionTime} waitingDays={WAITING_DAYS} />
+          </Panel>
+        </div>
+
+        <Panel title="Price change radar" subtitle="Each proposed price against the live price it would replace">
+          <PriceRadar points={approvals.prices} since={approvals.since} now={approvals.now} />
+        </Panel>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Panel title="Supplier response" subtitle="How invited suppliers answered, latest RFQs first">
+            <ResponseRates rows={sourcing.responses} />
+          </Panel>
+          <Panel title="Quote spread" subtitle="Lowest to highest quote at the reference quantity">
+            <QuoteSpread rows={sourcing.spreads} />
+          </Panel>
         </div>
       </section>
 

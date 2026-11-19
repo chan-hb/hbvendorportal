@@ -149,6 +149,29 @@ date and status needed to group them. Fill rate counts completed orders only; op
 not due yet and would read as under-delivery that has not happened. Lines with no item number
 (services, procurement categories) are left out.
 
+### Staff analytics are computed on read, from what the portal already stores
+
+The dashboard has an Insights section for all Huda Beauty staff: approval funnel, time to decision,
+a price change radar, supplier response rates and quote spread. Administrators also get
+`/admin/analytics`: sync health by run, failures grouped by error, and the most active vendors and
+staff. Everything comes from `src/lib/analytics.ts`, recomputed on each page load for a 30 day,
+90 day or 12 month range. There is no reporting table and nothing to keep in step.
+
+Definitions worth knowing:
+
+- **Time to decision** pairs each approval, rejection or change request with the submission just
+  before it, so a resubmission is timed from the resubmission, not the first attempt.
+- **Price change** compares against the live price snapshotted at submission, same currency only.
+- **Most active** counts actions: price submissions, quotes and RFQs opened for vendors; decisions,
+  RFQs raised and awards for staff. The portal stores only each user's *last* sign-in, so sign-in
+  frequency cannot be shown without a new login log.
+- **Failures** include problems still waiting to be fixed (agreements that could not go live,
+  purchase order refreshes that failed) whatever the range. A RUNNING sync with no heartbeat for
+  fifteen minutes is shown as stalled.
+
+Charts are hand-drawn SVG with a validated colour set (pink, violet, teal); status colours always
+carry an icon and label. Every chart has a table view or text equivalent.
+
 ---
 
 ## Things that will catch you out
