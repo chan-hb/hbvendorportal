@@ -11,6 +11,9 @@ export type D365Config = {
   itemEntity: string;
   tradeAgreementEntity: string;
   pushEntity: string;
+  poHeaderEntity: string;
+  poLineEntity: string;
+  poReceiptEntity: string;
   legalEntities: string[];
   pageSize: number;
   incrementalEnabled: boolean;
@@ -51,6 +54,9 @@ export async function getD365Config(): Promise<D365Config> {
     itemEntity: s.itemEntity,
     tradeAgreementEntity: s.tradeAgreementEntity,
     pushEntity: s.pushEntity,
+    poHeaderEntity: s.poHeaderEntity,
+    poLineEntity: s.poLineEntity,
+    poReceiptEntity: s.poReceiptEntity,
     legalEntities: s.legalEntities,
     pageSize: s.pageSize,
     incrementalEnabled: s.incrementalEnabled,

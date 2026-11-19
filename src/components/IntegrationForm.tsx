@@ -15,6 +15,9 @@ export type IntegrationValues = {
   itemEntity: string;
   tradeAgreementEntity: string;
   pushEntity: string;
+  poHeaderEntity: string;
+  poLineEntity: string;
+  poReceiptEntity: string;
   legalEntities: string;
   pageSize: number;
   incrementalEnabled: boolean;
@@ -84,6 +87,9 @@ export function IntegrationForm({ values }: { values: IntegrationValues }) {
             required
           />
           <Text name="pushEntity" label="Write-back entity" defaultValue={values.pushEntity} required />
+          <Text name="poHeaderEntity" label="Purchase order header entity" defaultValue={values.poHeaderEntity} required />
+          <Text name="poLineEntity" label="Purchase order line entity" defaultValue={values.poLineEntity} required />
+          <Text name="poReceiptEntity" label="Product receipt line entity" defaultValue={values.poReceiptEntity} required />
         </div>
       </div>
 

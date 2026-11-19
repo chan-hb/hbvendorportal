@@ -6,6 +6,7 @@ import type { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { resolveAccess } from "@/lib/access";
 import { lockoutFor, verifyPassword } from "@/lib/password";
+import { startPurchaseOrderRefresh } from "@/lib/d365/purchase-orders";
 
 declare module "next-auth" {
   interface Session {
@@ -81,6 +82,13 @@ const providers = [
         },
       });
 
+      // Purchase orders are refreshed from D365 on every vendor sign-in. Not
+      // awaited: sign-in must not wait on the ERP, and the purchase orders
+      // page shows progress while it runs.
+      if (decision.role === "VENDOR" && decision.vendorId) {
+        void startPurchaseOrderRefresh(decision.vendorId, { force: true });
+      }
+
       return { id: user.id, email: user.email, name: user.name };
     },
   }),
@@ -127,6 +135,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
         update: { role: decision.role, vendorId: decision.vendorId, lastLoginAt: new Date() },
       });
+      if (decision.role === "VENDOR" && decision.vendorId) {
+        void startPurchaseOrderRefresh(decision.vendorId, { force: true });
+      }
       return true;
     },
 

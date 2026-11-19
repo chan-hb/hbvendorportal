@@ -136,6 +136,9 @@ model Vendor {
 
   legalEntities VendorLegalEntity[]
   allowedEmails AllowedEmail[]
+  poLines       PurchaseOrderLine[]
+  poReceipts    PurchaseReceipt[]
+  poRefresh     VendorPoRefresh?
   users         User[]
   agreements      Agreement[]
   items           Item[]
@@ -344,6 +347,12 @@ model IntegrationSetting {
   itemEntity           String  @default("ReleasedProductsV2")
   tradeAgreementEntity String  @default("PriceDiscountJournalLines")
   pushEntity           String  @default("HBVendorTradeAgreementRequests")
+
+  // Purchase orders are read live per vendor rather than bulk synced, so they
+  // have no filter or checkpoint settings of their own.
+  poHeaderEntity  String @default("PurchaseOrderHeadersV2")
+  poLineEntity    String @default("PurchaseOrderLinesV2")
+  poReceiptEntity String @default("ProductReceiptLinesV2")
 
   legalEntities String[] @default([]) // dataAreaIds included in the sync
 
@@ -821,4 +830,77 @@ model RfqEvent {
   createdAt DateTime   @default(now())
 
   @@index([rfqId, createdAt])
+}
+
+// ============================================================================
+// Purchase orders (vendor view)
+// ============================================================================
+
+/// One purchase order line for a vendor, mirrored from D365 when the vendor
+/// signs in. Only what the vendor view needs is kept: the SKU, its name, the
+/// quantity ordered and the quantity delivered, plus the order it belongs to.
+/// Anything older than two years is not fetched, and each refresh replaces the
+/// vendor's rows outright, so nothing older lingers either.
+model PurchaseOrderLine {
+  id       String @id @default(cuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  dataAreaId          String
+  purchaseOrderNumber String
+  lineNumber          Int
+  /// The header's accounting date, which is the order date in D365.
+  orderDate           DateTime
+  /// Header status: OPEN | RECEIVED | INVOICED | CANCELLED
+  poStatus            String
+
+  itemNumber   String
+  itemName     String?
+  orderedQty   Decimal @db.Decimal(18, 6)
+  /// Sum of product receipts against the line.
+  deliveredQty Decimal @default(0) @db.Decimal(18, 6)
+
+  refreshedAt DateTime @default(now())
+
+  @@unique([dataAreaId, purchaseOrderNumber, lineNumber])
+  @@index([vendorId, orderDate])
+  @@index([vendorId, poStatus])
+}
+
+/// One product receipt line. This is what dates a delivery, so it is what the
+/// delivered-over-time chart is drawn from.
+model PurchaseReceipt {
+  id       String @id @default(cuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  externalKey         String   @unique // dataAreaId|RecordId
+  dataAreaId          String
+  purchaseOrderNumber String
+  lineNumber          Int
+  itemNumber          String
+  receiptDate         DateTime
+  quantity            Decimal  @db.Decimal(18, 6)
+
+  @@index([vendorId, receiptDate])
+}
+
+/// Refresh state per vendor. Lets the page show progress, and stops two
+/// sign-ins from the same supplier pulling the same data twice at once.
+model VendorPoRefresh {
+  vendorId String @id
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  /// IDLE | RUNNING | SUCCESS | FAILED
+  status        String    @default("IDLE")
+  /// What the running refresh is doing, shown on the loading screen.
+  stage         String?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  /// When the last successful refresh completed. Kept separately from
+  /// finishedAt so a failed attempt does not hide how old the data is.
+  lastSuccessAt DateTime?
+  orderCount    Int       @default(0)
+  lineCount     Int       @default(0)
+  error         String?
 }
