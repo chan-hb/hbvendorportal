@@ -95,6 +95,32 @@ export function useChartWidth<T extends HTMLElement>(fallback = 800) {
   return [ref, width] as const;
 }
 
+/**
+ * Width and height of a box that fills the space its parent gives it. The SVG
+ * inside is positioned absolutely so it never feeds back into that size, which
+ * lets charts in one row stretch to match the tallest panel.
+ */
+export function useChartSize<T extends HTMLElement>(fallbackW = 480, fallbackH = 240) {
+  const ref = useRef<T>(null);
+  const [size, setSize] = useState({ w: fallbackW, h: fallbackH });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () =>
+      setSize({ w: Math.max(280, Math.round(el.clientWidth)), h: Math.max(180, Math.round(el.clientHeight)) });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, size.w, size.h] as const;
+}
+
+/** The one row of controls above each chart, the same height in every panel so plots start level. */
+export function ChartBar({ children }: { children: React.ReactNode }) {
+  return <div className="flex min-h-[50px] flex-wrap items-center justify-between gap-2 px-5 pt-4">{children}</div>;
+}
+
 function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
