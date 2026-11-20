@@ -4,6 +4,12 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Huda Beauty | Vendor portal",
   description: "Trade agreements, requests for quotation and purchase orders for Huda Beauty suppliers.",
+  // The HUDA monogram from public/, used as the browser tab and home screen icon.
+  icons: {
+    icon: [{ url: "/HBBrandLogo.jpg", type: "image/jpeg" }],
+    shortcut: "/HBBrandLogo.jpg",
+    apple: "/HBBrandLogo.jpg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
