@@ -2,15 +2,17 @@ export function Panel({
   title,
   subtitle,
   actions,
+  className,
   children,
 }: {
   title?: string;
   subtitle?: string;
   actions?: React.ReactNode;
+  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="panel">
+    <section className={className ? `panel ${className}` : "panel"}>
       {(title || actions) && (
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
           <div>

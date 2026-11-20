@@ -18,7 +18,8 @@ import {
   VIOLET,
   days,
   niceMax,
-  useChartWidth,
+  useChartSize,
+  ChartBar,
   num,
   price,
   shortDay,
@@ -47,8 +48,15 @@ export function ApprovalFunnel({ stages, outcomes }: { stages: FunnelStage[]; ou
   if (top === 0) return <Empty>No agreements were submitted in this period.</Empty>;
 
   return (
-    <div className="px-5 py-5">
-      <ol>
+    <div className="flex flex-1 flex-col">
+      <ChartBar>
+        <p className="text-xs text-charcoal/60">
+          <span className="font-semibold text-charcoal">{num((stages[stages.length - 1].value / top) * 100)}%</span> of
+          submissions are live
+        </p>
+      </ChartBar>
+      <div className="flex flex-1 flex-col px-5 pb-5 pt-2">
+      <ol className="mb-5">
         {stages.map((s, i) => {
           const pct = (s.value / top) * 100;
           const prev = i > 0 ? stages[i - 1].value : null;
@@ -77,7 +85,7 @@ export function ApprovalFunnel({ stages, outcomes }: { stages: FunnelStage[]; ou
           );
         })}
       </ol>
-      <div className="mt-5 grid grid-cols-2 gap-2 border-t border-line pt-4">
+      <div className="mt-auto grid grid-cols-2 gap-2 border-t border-line pt-4">
         {outcomes.map((o) => (
           <Link
             key={o.label}
@@ -88,6 +96,7 @@ export function ApprovalFunnel({ stages, outcomes }: { stages: FunnelStage[]; ou
             <span className="font-semibold tabular-nums text-charcoal">{o.value}</span>
           </Link>
         ))}
+      </div>
       </div>
     </div>
   );
@@ -100,8 +109,7 @@ export function DecisionTime({ points, waitingDays }: { points: DecisionPoint[];
   const [hover, setHover] = useState<number | null>(null);
   const [asTable, setAsTable] = useState(false);
   const values = points.map((p) => p.median).filter((v): v is number => v !== null);
-  const [box, W] = useChartWidth<HTMLDivElement>(560);
-  const H = 240;
+  const [box, W, H] = useChartSize<HTMLDivElement>(480, 260);
   const pad = { top: 18, right: 16, bottom: 28, left: 44 };
   const innerW = W - pad.left - pad.right;
   const innerH = H - pad.top - pad.bottom;
@@ -135,13 +143,13 @@ export function DecisionTime({ points, waitingDays }: { points: DecisionPoint[];
   const hovered = hover !== null ? points[hover] : null;
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-4">
+    <div className="flex flex-1 flex-col">
+      <ChartBar>
         <Legend items={[{ label: "Median days to decide", color: PINK }]} />
         <TableToggle asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
-      </div>
+      </ChartBar>
       {asTable ? (
-        <div className="max-h-72 overflow-auto px-5 py-4">
+        <div className="max-h-80 flex-1 overflow-auto px-5 py-4">
           <table className="w-full border-collapse">
             <thead className="border-b border-line bg-cloud/60">
               <tr>
@@ -170,10 +178,10 @@ export function DecisionTime({ points, waitingDays }: { points: DecisionPoint[];
           </table>
         </div>
       ) : (
-        <div ref={box} className="relative pb-3 pt-1">
+        <div ref={box} className="relative mb-3 mt-2 min-h-[240px] flex-1">
           <svg
             viewBox={`0 0 ${W} ${H}`}
-            className="h-auto w-full"
+            className="absolute inset-0 block h-full w-full"
             role="img"
             aria-label="Median days from submission to decision, by period"
             onMouseLeave={() => setHover(null)}
@@ -289,7 +297,7 @@ export function PriceRadar({ points, since, now }: { points: PricePoint[]; since
   const [hover, setHover] = useState<string | null>(null);
   const [side, setSide] = useState<Side>("all");
   const [asTable, setAsTable] = useState(false);
-  const [box, W] = useChartWidth<HTMLDivElement>(420);
+  const [box, W, H] = useChartSize<HTMLDivElement>(420, 260);
 
   if (points.length === 0) {
     return <Empty>No price changes against a live price were submitted in this period.</Empty>;
@@ -300,7 +308,6 @@ export function PriceRadar({ points, since, now }: { points: PricePoint[]; since
   const downs = points.filter((p) => p.pct < 0);
   const avg = (xs: PricePoint[]) => (xs.length ? xs.reduce((t, p) => t + p.pct, 0) / xs.length : 0);
 
-  const H = 220;
   const pad = { top: 10, right: 14, bottom: 26, left: 46 };
   const innerW = W - pad.left - pad.right;
   const innerH = H - pad.top - pad.bottom;
@@ -321,27 +328,17 @@ export function PriceRadar({ points, since, now }: { points: PricePoint[]; since
   );
 
   return (
-    <div>
-      <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-4">
+    <div className="flex flex-1 flex-col">
+      <ChartBar>
         <div className="flex flex-wrap items-center gap-1.5">
           {filter("all", "All", points.length)}
           {filter("up", "Increases", ups.length)}
           {filter("down", "Decreases", downs.length)}
         </div>
         <TableToggle asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-2 px-5 pt-3 text-xs text-charcoal/60">
-        <Legend
-          items={[
-            { label: `Increase, avg ${signedPct(avg(ups))}`, color: PINK, round: true },
-            { label: `Decrease, avg ${signedPct(avg(downs))}`, color: VIOLET, round: true },
-          ]}
-        />
-        <span>Select a dot to open it</span>
-      </div>
-
+      </ChartBar>
       {asTable ? (
-        <div className="max-h-64 overflow-auto px-5 py-4">
+        <div className="max-h-80 flex-1 overflow-auto px-5 py-4">
           <table className="w-full border-collapse">
             <thead className="border-b border-line bg-cloud/60">
               <tr>
@@ -373,22 +370,16 @@ export function PriceRadar({ points, since, now }: { points: PricePoint[]; since
           </table>
         </div>
       ) : (
-        <div ref={box} className="relative pb-3 pt-1">
+        <div ref={box} className="relative mt-2 min-h-[240px] flex-1">
           <svg
             viewBox={`0 0 ${W} ${H}`}
-            className="h-auto w-full"
+            className="absolute inset-0 block h-full w-full"
             role="img"
             aria-label="Proposed price change against the live price, by submission date"
             onMouseLeave={() => setHover(null)}
           >
             <rect x={pad.left} y={pad.top} width={innerW} height={innerH / 2} fill="#FDF4F8" />
             <rect x={pad.left} y={pad.top + innerH / 2} width={innerW} height={innerH / 2} fill="#F7F3FB" />
-            <text x={W - pad.right - 6} y={pad.top + 13} textAnchor="end" fontSize={10} fill={AXIS_TEXT}>
-              Up
-            </text>
-            <text x={W - pad.right - 6} y={pad.top + innerH - 6} textAnchor="end" fontSize={10} fill={AXIS_TEXT}>
-              Down
-            </text>
             {yTicks.map((t) => (
               <g key={t}>
                 <line
@@ -479,6 +470,15 @@ export function PriceRadar({ points, since, now }: { points: PricePoint[]; since
           ) : null}
         </div>
       )}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-5 pb-4 pt-2 text-xs text-charcoal/60">
+        <Legend
+          items={[
+            { label: `Increase, avg ${signedPct(avg(ups))}`, color: PINK, round: true },
+            { label: `Decrease, avg ${signedPct(avg(downs))}`, color: VIOLET, round: true },
+          ]}
+        />
+        <span>Select a dot to open it</span>
+      </div>
     </div>
   );
 }
