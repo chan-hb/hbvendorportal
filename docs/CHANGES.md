@@ -256,6 +256,15 @@ lands on whoever is first through the door after a quiet period. Scaling to zero
 **Keep the time budget below the platform request timeout.** Container Apps ingress closes an idle
 request after a few minutes. 180 seconds is the configured default.
 
+**The portal installs as an app.** `src/app/manifest.ts` (served as `/manifest.webmanifest`),
+the PNG icons in `public/icons/` and the service worker `public/sw.js` are what make Chrome and Edge
+offer "Install app". The worker caches nothing a signed-in user sees: it only stores
+`public/offline.html` and shows it when a page navigation fails with no connection. Bump `VERSION`
+in `sw.js` when the offline page or icons change. These paths all have a file extension, which the
+middleware matcher lets through for signed-out visitors; keep it that way, or install breaks. The
+icons were generated from `public/HBBrandLogo.jpg`, a 300 pixel image, so the 512 pixel ones are
+upscaled; replace them with a larger master when one is available.
+
 ---
 
 ## First-time setup, in order
